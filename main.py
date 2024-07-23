@@ -6,16 +6,13 @@ from motleycrew.common.logging import logger, configure_logging
 from motleycache import enable_cache, disable_cache
 
 logger.setLevel(logging.INFO)
-# logging.getLogger().setLevel(logging.INFO)
+logging.getLogger().setLevel(logging.INFO)
 
 
 def main():
-    image_description = """ В центре изображения находится фотография современного многоэтажного жилого здания, котороe  
-     является новостройкой. Здание имеет сложную архитектурную форму с большими окнами и балконами. 
-     Оно выполнено в бежево-коричневых тонах с вкраплениями серого цвета. 
-     На фоне здания изображено голубое небо с белыми облаками. 
-"""
-    slogan = '''"Живите где хотите с гибким поиском по новостройкам"'''
+    image_description = """Generate a high-quality image of a green bus and a pink train with text advertising a 
+    bank promotion in Russian. The background should be bright orange and purple colors."""
+    slogan = '''"Альфа пятница Кэшбэк 100%"'''
 
     images_dir = "banner_images"
     text_description = "текст расположен в одном блоке"
