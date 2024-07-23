@@ -27,6 +27,7 @@ class BaseBannerGenerator:
 
         dalle_image_size = "{}x{}".format(image_size[0], image_size[1])
         image_generate_tool = DallEImageGeneratorTool(
+            dall_e_prompt_template="""{text}""",
             images_directory=images_dir, size=dalle_image_size
         )
         # image generate
@@ -158,7 +159,7 @@ class BannerGeneratorWithText(BaseBannerGenerator):
 
     ):
         image_description = '''{}. 
-        Add text on image "{}" with next description {}'''.format(image_description,
+        Include text "{}" in the image , with next description "{}"'''.format(image_description,
                                                                   slogan,
                                                                   text_description)
         super().__init__(image_description, images_dir, slogan, image_size)
@@ -184,7 +185,8 @@ class BannerGeneratorWithText(BaseBannerGenerator):
             crew=self.crew,
             name="Create html screenshot",
             description=f"Remove text from the resulting image and make up html code ,the background of "
-                        f"which will be the cleared image and place the text '{self.slogan}' in the foreground",
+                        f"which will be the cleared image and place the text '{self.slogan}' in the foreground."
+                        f"Place the text in the coordinates of the deleted text",
             agent=self.html_developer,
         )
         self.generate_banner_task >> create_html_image
