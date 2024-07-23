@@ -1,4 +1,8 @@
 import os
+from typing import List
+
+import cv2
+import numpy as np
 from dotenv import load_dotenv
 
 
@@ -8,15 +12,15 @@ from langchain_core.pydantic_v1 import BaseModel, Field
 from motleycrew.tools import MotleyTool
 
 from clear_image.text_deleter import TextDeleter
-from clear_image.inpainter import DalleInpainter
-from clear_image.text_detector import KerasOcrTextDetector
-
+from clear_image.inpainter import DalleInpainter, Inpainter
+from clear_image.text_detector import KerasOcrTextDetector, TextBox
 
 
 class TextRemover:
 
     def __init__(self,):
         self.api_key = os.environ.get("OPENAI_API_KEY")
+
     def remove_text(self, image_path: str) -> str:
         image_path = image_path.strip()
         if not os.path.exists(image_path):
@@ -27,7 +31,42 @@ class TextRemover:
         text_detector = KerasOcrTextDetector()
         inpainter = DalleInpainter(self.api_key)
         text_deleter = TextDeleter(text_detector, inpainter)
-        return text_deleter.delete_text(image_path, output_image_path)
+        ret_image_path = text_deleter.delete_text(image_path, output_image_path)
+
+        ret_rows = ["Clear image path: {}".format(ret_image_path)]
+
+        if text_deleter.text_bboxes:
+            ret_rows.append("Text boxes:")
+            text_box_template = "    text box: x: {}, y: {}, width: {}, height: {}"
+            boxes = self.find_text_boxes(image_path, inpainter, text_deleter.text_bboxes)
+            for box in boxes:
+                ret_rows.append(text_box_template.format(*box))
+        else:
+            ret_rows.append("Text boxes not found")
+
+        return "\n".join(ret_rows)
+
+    def find_text_boxes(self, image_path: str, inpainter: Inpainter, text_boxes: List[TextBox] ):
+        img = cv2.imread(image_path)
+        h, w = img.shape[:2]
+
+        img_mask = inpainter._make_mask(text_boxes, h, w)
+        mask = img_mask[:, :, 3]
+        img_mask[img_mask[:, :, 3] == 0] = (127, 127, 127, 127)
+
+        _, binary_mask = cv2.threshold(mask, 127, 255, cv2.THRESH_BINARY_INV)
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (20, 20))
+        dilated_mask = cv2.dilate(binary_mask, kernel, iterations=1)
+        num_labels, labels_im = cv2.connectedComponents(dilated_mask)
+
+        boxes = []
+        for label in range(1, num_labels):  # Start from 1 to skip the background
+            x, y, w, h = cv2.boundingRect((labels_im == label).astype(np.uint8))
+            boxes.append((x, y, w, h))
+            img_mask = cv2.rectangle(img_mask, (x, y), (x+w, y+h), (255, 0, 0), 3)
+
+        boxes.sort(key=lambda x: x[2] * x[3], reverse=True)
+        return boxes
 
 
 class RemoveTextTool(MotleyTool):
@@ -59,15 +98,7 @@ def create_render_tool(remover: TextRemover):
     return Tool.from_function(
         func=remover.remove_text,
         name="remove_text",
-        description="A tool for removing text from an image",
+        description="""A tool for removing text from an image. 
+                    Returns the path to the cleared image and text coordinate blocks in the format, (x, y, width, heigth)""",
         args_schema=RemoveTextToolInput,
     )
-
-
-if __name__ == '__main__':
-    load_dotenv()
-    image_path = r"C:\Users\User\PycharmProjects\motleycrew\examples\banner_images\72743db5.png"
-    tesseract_installation = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-    remove_tool = RemoveTextTool(tesseract_installation)
-    remove_result = remove_tool.invoke(image_path)
-    print("remove result: ", remove_result)

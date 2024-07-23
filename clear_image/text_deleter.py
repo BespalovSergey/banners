@@ -7,6 +7,7 @@ class TextDeleter:
     def __init__(self, text_detector: TextDetector, inpainter: Inpainter):
         self.text_detector = text_detector
         self.inpainter = inpainter
+        self.text_bboxes = []
 
     def delete_text(self, in_image_path: str, out_image_path: str, prompt=Inpainter.DEFAULT_PROMPT, max_retries=5):
         to_inpaint_path = in_image_path
@@ -21,6 +22,8 @@ class TextDeleter:
                 if i == 0:
                     return in_image_path
                 break
+
+            self.text_bboxes += text_boxes
 
             logging.info(f"Calling in-painting model...")
             self.inpainter.inpaint(to_inpaint_path, text_boxes, prompt, out_image_path)
