@@ -1,5 +1,6 @@
 """In-painting models."""
 import io
+from abc import ABC, abstractmethod
 import openai
 import requests
 import numpy as np
@@ -10,12 +11,20 @@ from typing import Sequence
 from clear_image.text_detector import TextBox
 
 
-class Inpainter:
+class Inpainter(ABC):
     """Interface for in-painting models."""
-  # TODO(julia): Run some experiments to determine the best prompt.
     DEFAULT_PROMPT = "plain background"
 
+    @abstractmethod
     def inpaint(self, in_image_path: str, text_boxes: Sequence[TextBox], prompt: str, out_image_path: str):
+        pass
+
+    @abstractmethod
+    def _make_mask(self, text_boxes: Sequence[TextBox], height: int, width: int) -> np.array:
+        pass
+
+    @abstractmethod
+    def _make_mask_as_bytes(self, text_boxes: Sequence[TextBox], height: int, width: int) -> bytes:
         pass
 
 
@@ -25,8 +34,7 @@ class DalleInpainter(Inpainter):
     def __init__(self, openai_key: str):
          self.client = openai.Client(api_key=openai_key)
 
-    @staticmethod
-    def _make_mask(text_boxes: Sequence[TextBox], height: int, width: int) -> bytes:
+    def _make_mask(self, text_boxes: Sequence[TextBox], height: int, width: int) -> np.array:
         """Returns an .png where the text boxes are transparent."""
 
         alpha = np.ones((height, width, 1)) * 255
@@ -35,9 +43,13 @@ class DalleInpainter(Inpainter):
 
         mask = np.zeros((height, width, 3))
         mask = np.concatenate([mask, alpha], axis=2)
-        mask = Image.fromarray(mask.astype(np.uint8))
+        mask = mask.astype(np.uint8)
+        return mask
 
-        # Convert mask to bytes.
+    def _make_mask_as_bytes(self, text_boxes: Sequence[TextBox], height: int, width: int) -> bytes:
+        mask = self._make_mask(text_boxes, height, width)
+        mask = Image.fromarray(mask)
+
         bytes_arr = io.BytesIO()
         mask.save(bytes_arr, format="PNG")
         return bytes_arr.getvalue()
@@ -45,27 +57,9 @@ class DalleInpainter(Inpainter):
     def inpaint(self, in_image_path: str, text_boxes: Sequence[TextBox], prompt: str, out_image_path: str):
         image = Image.open(in_image_path)  # open the image to inspect its size
 
-        # import cv2
-        # img = cv2.imread(in_image_path)
-        # h, w = img.shape[:2]
-        # img = cv2.resize(img, (int(w/2), int(h/2)))
-        #
-        # for box in text_boxes:
-        #     x_max = int(box.x + box.w)
-        #     y_max = int(box.y + box.h)
-        #
-        #     try:
-        #       img = cv2.rectangle(img, (int(box.x/2), int(box.y/2)), (int(x_max/2), int(y_max/2) ), (0, 255, 255), 2)
-        #     except BaseException:
-        #       print("exception")
-        #
-        #
-        # cv2.imshow('img', img)
-        # cv2.waitKey(0)
-        # print("prompt: ", prompt)
         response = self.client.images.edit(
         image=open(in_image_path, "rb"),
-        mask=self._make_mask(text_boxes, image.height, image.width),
+        mask=self._make_mask_as_bytes(text_boxes, image.height, image.width),
         prompt=prompt,
         n=1,
         )
