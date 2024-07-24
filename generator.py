@@ -1,3 +1,4 @@
+import os
 from typing import Tuple
 
 from motleycrew.tasks import SimpleTask
@@ -21,17 +22,16 @@ class BaseBannerGenerator:
     ):
         self.crew = MotleyCrew()
         self.image_description = image_description
-        self.images_dir = images_dir
+        self.images_dir = os.path.abspath(images_dir)
         self.slogan = slogan
         self.image_size = image_size
 
         dalle_image_size = "{}x{}".format(image_size[0], image_size[1])
         image_generate_tool = DallEImageGeneratorTool(
-            dall_e_prompt_template="""{text}""",
-            images_directory=images_dir, size=dalle_image_size
+            dall_e_prompt_template="""{text}""", images_directory=self.images_dir, size=dalle_image_size
         )
         # image generate
-        self.advertising_agent = ReActToolCallingMotleyAgent (
+        self.advertising_agent = ReActToolCallingMotleyAgent(
             name="Advertising agent",
             description="Advertising development",
             prompt_prefix="You are an advertising agent who creates banners.",
@@ -60,17 +60,19 @@ class GptBannerGenerator(BaseBannerGenerator):
         images_dir: str,
         slogan: str | None = None,
         image_size: Tuple[int, int] = (1024, 1024),
+        max_review_iterations: int = 5
     ):
         super().__init__(image_description, images_dir, slogan, image_size)
 
         if self.slogan:
             html_recommend_tool = HtmlSloganRecommendTool(slogan=self.slogan)
-            remove_text_tool = RemoveTextTool()
+            image_info_tool = BannerImageParserTool()
             html_render_output_handler = HtmlRenderOutputHandler(
-                gpt_check=True, work_dir=images_dir, window_size=self.image_size, slogan=self.slogan
+                gpt_check=False, work_dir=images_dir, window_size=self.image_size, slogan=self.slogan,
+                max_iterations=max_review_iterations
             )
             # html render
-            self.html_developer = ReActToolCallingMotleyAgent (
+            self.html_developer = ReActToolCallingMotleyAgent(
                 name="Html coder",
                 description="Html developer",
                 prompt_prefix=f"""You are an html coder engaged in the layout of beautiful web pages."
@@ -103,6 +105,7 @@ class BannerGenerator(BaseBannerGenerator):
         font: str = "Arial",
         text_shadow: int | None = None,
         text_background: bool = False,
+        max_review_iterations: int = 5,
     ):
 
         super().__init__(image_description, images_dir, slogan, image_size)
@@ -112,11 +115,13 @@ class BannerGenerator(BaseBannerGenerator):
 
         if self.slogan:
             html_render_output_handler = HtmlRenderOutputHandler(
-                work_dir=images_dir, window_size=self.image_size
+                work_dir=images_dir,
+                window_size=self.image_size,
+                max_iterations=max_review_iterations,
             )
             image_info_tool = BannerImageParserTool()
             # html render
-            self.html_developer = ReActToolCallingMotleyAgent (
+            self.html_developer = ReActToolCallingMotleyAgent(
                 name="Html coder",
                 description="Html developer",
                 prompt_prefix=f"""You are an html coder engaged in the layout of beautiful web pages."
@@ -156,9 +161,9 @@ class BannerGeneratorWithText(BaseBannerGenerator):
         images_dir: str,
         slogan: str,
         image_size: Tuple[int, int] = (1024, 1024),
-
+        max_review_iterations: int = 5,
     ):
-        image_description = '''{}. 
+        image_description = '''{}.
         Include text "{}" in the image , with next description "{}"'''.format(image_description,
                                                                   slogan,
                                                                   text_description)
@@ -167,15 +172,19 @@ class BannerGeneratorWithText(BaseBannerGenerator):
         html_recommend_tool = HtmlSloganRecommendTool(slogan=self.slogan)
         remove_text_tool = RemoveTextTool()
         html_render_output_handler = HtmlRenderOutputHandler(
-            gpt_check=True, work_dir=images_dir, window_size=self.image_size, slogan=self.slogan
+            gpt_check=False,
+            work_dir=images_dir,
+            window_size=self.image_size,
+            slogan=self.slogan,
+            max_iterations=max_review_iterations,
         )
         # html render
-        self.html_developer = ReActToolCallingMotleyAgent (
+        self.html_developer = ReActToolCallingMotleyAgent(
             name="Html coder",
             description="Html developer",
-            prompt_prefix=f"""You are an html coder engaged in the layout of beautiful web pages."
-                                      f"You create all the pages in utf-8 encoding and
-                                      carefully write down the absolute paths to the images use only a slash as a separator.""",
+            prompt_prefix=f"""You are an html coder engaged in the layout of beautiful web pages.
+                          You create all the pages in utf-8 encoding and
+                          carefully write down the absolute paths to the images use only a slash as a separator.""",
             # f"You write the paths to the files correctly for {platform.system()} operating system",
             verbose=True,
             tools=[remove_text_tool, html_recommend_tool],
@@ -185,8 +194,8 @@ class BannerGeneratorWithText(BaseBannerGenerator):
             crew=self.crew,
             name="Create html screenshot",
             description=f"Remove text from the resulting image and make up html code ,the background of "
-                        f"which will be the cleared image and place the text '{self.slogan}' in the foreground."
-                        f"Place the text in the coordinates of the deleted text",
+            f"which will be the cleared image and place the text '{self.slogan}' in the foreground."
+            f"Place the text in the coordinates of the deleted text",
             agent=self.html_developer,
         )
         self.generate_banner_task >> create_html_image
