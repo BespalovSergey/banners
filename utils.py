@@ -1,5 +1,7 @@
 from queue import Queue
+from typing import List, Tuple
 import cv2
+import numpy as np
 
 
 def show_image(image_path: str, q: Queue):
@@ -15,3 +17,35 @@ def show_image(image_path: str, q: Queue):
         else:
             break
     cv2.destroyAllWindows()
+
+
+def find_singular_points(image: np.array, point_threshold: float = 0.1) -> np.array:
+    """Returns numpy array dtype: bool with singular points"""
+    _img = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+    _img = np.float32(_img)
+    dest = cv2.cornerHarris(_img, 2, 5, 0.07)
+    dest = cv2.dilate(dest, None)
+    points = dest > point_threshold * dest.max()
+    return points
+
+
+def get_points_density(
+    image: np.array, num_locations: int = 3, point_threshold: float = 0.1
+) -> Tuple[List[int], List[Tuple[int, int]]]:
+    """Returns the number of singular points in each area of the image, dividing the image with horizontal lines"""
+
+    points = find_singular_points(image, point_threshold)
+
+    h, w = image.shape[:2]
+    borders = [int(v) for v in np.linspace(0, h, num_locations + 1)]
+
+    points_density = []
+    coords_area = []
+
+    for i in range(1, len(borders)):
+        points_slice = (borders[i - 1], borders[i])
+        num_points = np.sum(points[points_slice[0]: points_slice[1], ...])
+        points_density.append(num_points)
+        coords_area.append(points_slice)
+
+    return points_density, coords_area
