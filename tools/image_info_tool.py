@@ -9,6 +9,7 @@ from langchain.tools import Tool
 from langchain_core.pydantic_v1 import BaseModel, Field
 
 from motleycrew.tools import MotleyTool
+from utils import get_points_density
 
 
 class BannerImageParser:
@@ -57,20 +58,13 @@ class BannerImageParser:
         return color
 
     def get_slogan_location(self, img: np.array) -> Tuple[Tuple[int, int], str]:
-        h, w = img.shape[:2]
-        _img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-        _img = np.float32(_img)
-        dest = cv2.cornerHarris(_img, 2, 5, 0.07)
-        dest = cv2.dilate(dest, None)
-        points = dest > self.point_threshold * dest.max()
 
         locations = ["top", "center", "bottom"]
-        borders = [int(v)for v in np.linspace(0, h, 4)]
+        num_points, points_slices = get_points_density(img, len(locations), self.point_threshold)
+
         points_locations = []
-        for i, location in zip(range(1, len(borders)+1), locations):
-            points_slice = (borders[i-1], borders[i])
-            num_points = np.sum(points[points_slice[0]: points_slice[1], ...])
-            points_locations.append((num_points, points_slice, location))
+        for num_point, points_slice, location in zip(num_points, points_slices, locations):
+            points_locations.append((num_point, points_slice, location))
 
         points_locations = sorted(points_locations, key=lambda x: x[0])
         return_data = points_locations[0][1:]
