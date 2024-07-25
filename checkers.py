@@ -17,6 +17,10 @@ class BaseChecker(ABC):
 
 class HumanChecker(BaseChecker):
 
+    remarks_prefix = {"recommendation": "ask recommendations how"}
+    remarks_postfix = {"recommendation": "Need text coordinates (x, y, width, height), color, size, slant text block,"
+                                         " font, add the slogan text to the recommendation request", }
+
     def check(self, image_path: str) -> bool:
         # show image
         q = Queue()
@@ -26,12 +30,14 @@ class HumanChecker(BaseChecker):
         # remarks
         time.sleep(1)
         remarks = []
-        features = ("color", "size", "position", "font", "additions")
+        features = ("color", "size", "position", "font", "additions", "recommendation")
         for feature in features:
             input_text = "Change text {}? input text {} or press Enter: ".format(feature, feature)
             input_result = input(input_text)
             if input_result:
-                remark = "    {}: {}".format(feature, input_result)
+                prefix = self.remarks_prefix.get(feature, feature)
+                postfix = self.remarks_postfix.get(feature, '')
+                remark = "    {}: {} {}".format(prefix, input_result, postfix)
                 remarks.append(remark)
         q.put(None)
         if remarks:
