@@ -2,7 +2,7 @@ import os
 import base64
 
 import openai
-from langchain.tools import Tool
+from langchain.tools import Tool, StructuredTool
 from langchain_core.pydantic_v1 import BaseModel, Field
 
 from motleycrew.tools import MotleyTool
@@ -25,7 +25,7 @@ class GptImageProcessor:
         with open(image_path, "rb") as image_file:
             return base64.b64encode(image_file.read()).decode('utf-8')
 
-    def process_image(self, image_path: str) -> str:
+    def process_image(self, image_path: str, prompt: str = None) -> str:
         image_path = image_path.strip()
         if not os.path.exists(image_path):
             raise FileNotFoundError(image_path)
@@ -34,6 +34,7 @@ class GptImageProcessor:
         img_ext = img_ext[1:]
 
         base64_image = self.encode_image(image_path)
+        prompt = prompt or self.prompt
 
         messages = [
             {
@@ -41,7 +42,7 @@ class GptImageProcessor:
                 "content": [
                     {
                         "type": "text",
-                        "text": self.prompt
+                        "text": prompt
                     },
                     {
                         "type": "image_url",
@@ -80,9 +81,11 @@ class HtmlSloganRecommendToolInput(BaseModel):
 
     Attributes:
         image_path (str):
+        prompt (str):
     """
 
     image_path: str = Field(description="Path to the image")
+    prompt: str = Field(default=None, description="Recommendation, wish for formatting text in html code")
 
 
 def create_render_tool(processor: GptImageProcessor):
@@ -91,7 +94,7 @@ def create_render_tool(processor: GptImageProcessor):
     Returns:
         Tool:
     """
-    return Tool.from_function(
+    return StructuredTool.from_function(
         func=processor.process_image,
         name="gpt_html_slogan_recommend",
         description="A tool for getting image description and  hints when creating html code placing and "
