@@ -49,3 +49,11 @@ def get_points_density(
         coords_area.append(points_slice)
 
     return points_density, coords_area
+
+
+def combining_mask_boxes(mask: np.array, kernel: tuple = (20, 20), iterations: int = 1):
+    _, binary_mask = cv2.threshold(mask, 127, 255, cv2.THRESH_BINARY_INV)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, kernel)
+    dilated_mask = cv2.dilate(binary_mask, kernel, iterations=iterations)
+
+    return dilated_mask

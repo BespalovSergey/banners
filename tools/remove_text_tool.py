@@ -14,7 +14,7 @@ from motleycrew.tools import MotleyTool
 from clear_image.text_deleter import TextDeleter
 from clear_image.inpainter import DalleInpainter, Inpainter
 from clear_image.text_detector import KerasOcrTextDetector, TextBox
-from utils import get_points_density
+from utils import get_points_density, combining_mask_boxes
 
 
 class TextRemover:
@@ -63,18 +63,14 @@ class TextRemover:
 
         img_mask = inpainter._make_mask(text_boxes, h, w)
         mask = img_mask[:, :, 3]
-        img_mask[img_mask[:, :, 3] == 0] = (127, 127, 127, 127)
 
-        _, binary_mask = cv2.threshold(mask, 127, 255, cv2.THRESH_BINARY_INV)
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (20, 20))
-        dilated_mask = cv2.dilate(binary_mask, kernel, iterations=1)
-        num_labels, labels_im = cv2.connectedComponents(dilated_mask)
+        combining_mask = combining_mask_boxes(mask, kernel=(20, 20), iterations=1)
+        num_labels, labels_im = cv2.connectedComponents(combining_mask)
 
         boxes = []
         for label in range(1, num_labels):  # Start from 1 to skip the background
             x, y, w, h = cv2.boundingRect((labels_im == label).astype(np.uint8))
             boxes.append((x, y, w, h))
-            img_mask = cv2.rectangle(img_mask, (x, y), (x + w, y + h), (255, 0, 0), 3)
 
         boxes.sort(key=lambda x: x[2] * x[3], reverse=True)
         return boxes
