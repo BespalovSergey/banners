@@ -25,10 +25,10 @@ class HumanChecker(BaseChecker):
 
     def check(self, image_path: str) -> bool:
         # show image
-        # q = Queue()
-        # t = Thread(target=show_image, args=[image_path, q])
-        # t.start()
-        show_image(image_path)
+        q = Queue()
+        t = Thread(target=show_image, args=[image_path, q])
+        t.start()
+
         # remarks
         time.sleep(1)
         remarks = []
@@ -41,7 +41,7 @@ class HumanChecker(BaseChecker):
                 postfix = self.remarks_postfix.get(feature, '')
                 remark = "    {}: {} {}".format(prefix, input_result, postfix)
                 remarks.append(remark)
-        # q.put(None)
+        q.put(None)
         cv2.destroyAllWindows()
         if remarks:
             remarks_text = "update html text:\n{}".format("\n".join(remarks))
