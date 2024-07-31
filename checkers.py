@@ -3,6 +3,8 @@ from queue import Queue
 from threading import Thread
 import time
 
+import cv2
+
 from utils import show_image
 from motleycrew.common.exceptions import InvalidOutput
 from tools.image_description_tool import GptImageProcessor
@@ -23,10 +25,10 @@ class HumanChecker(BaseChecker):
 
     def check(self, image_path: str) -> bool:
         # show image
-        q = Queue()
-        t = Thread(target=show_image, args=[image_path, q])
-        t.start()
-
+        # q = Queue()
+        # t = Thread(target=show_image, args=[image_path, q])
+        # t.start()
+        show_image(image_path)
         # remarks
         time.sleep(1)
         remarks = []
@@ -39,7 +41,8 @@ class HumanChecker(BaseChecker):
                 postfix = self.remarks_postfix.get(feature, '')
                 remark = "    {}: {} {}".format(prefix, input_result, postfix)
                 remarks.append(remark)
-        q.put(None)
+        # q.put(None)
+        cv2.destroyAllWindows()
         if remarks:
             remarks_text = "update html text:\n{}".format("\n".join(remarks))
             raise InvalidOutput(remarks_text)
