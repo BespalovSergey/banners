@@ -3,7 +3,9 @@ from typing import Tuple
 
 from motleycrew.tasks import SimpleTask
 from motleycrew.agents.langchain import ReActToolCallingMotleyAgent
-from motleycrew.tools.image.dall_e import DallEImageGeneratorTool
+
+# from motleycrew.tools.image.dall_e import DallEImageGeneratorTool
+from motleycrew.tools.image.replicate_tool import ReplicateImageGeneratorTool
 from tools.image_info_tool import BannerImageParserTool
 from tools.image_description_tool import HtmlSloganRecommendTool
 from tools.remove_text_tool import RemoveTextTool
@@ -27,9 +29,19 @@ class BaseBannerGenerator:
         self.image_size = image_size
 
         dalle_image_size = "{}x{}".format(image_size[0], image_size[1])
-        image_generate_tool = DallEImageGeneratorTool(
-            dall_e_prompt_template="""{text}""", images_directory=self.images_dir, size=dalle_image_size
+
+        image_generate_tool = ReplicateImageGeneratorTool(
+            model_name="flux-pro",
+            images_directory=self.images_dir,
+            size=dalle_image_size,
+            width=image_size[0],
+            height=image_size[1],
+            # output_format="png",  # Of all the flux models, nly flux-dev appears to support png
         )
+
+        # image_generate_tool = DallEImageGeneratorTool(
+        #     dall_e_prompt_template="""{text}""", images_directory=self.images_dir, size=dalle_image_size
+        # )
         # image generate
         self.advertising_agent = ReActToolCallingMotleyAgent(
             name="Advertising agent",
@@ -60,7 +72,7 @@ class GptBannerGenerator(BaseBannerGenerator):
         images_dir: str,
         slogan: str | None = None,
         image_size: Tuple[int, int] = (1024, 1024),
-        max_review_iterations: int = 5
+        max_review_iterations: int = 5,
     ):
         super().__init__(image_description, images_dir, slogan, image_size)
 
@@ -68,8 +80,11 @@ class GptBannerGenerator(BaseBannerGenerator):
             html_recommend_tool = HtmlSloganRecommendTool(slogan=self.slogan)
             image_info_tool = BannerImageParserTool()
             html_render_output_handler = HtmlRenderOutputHandler(
-                gpt_check=False, work_dir=images_dir, window_size=self.image_size, slogan=self.slogan,
-                max_iterations=max_review_iterations
+                gpt_check=False,
+                work_dir=images_dir,
+                window_size=self.image_size,
+                slogan=self.slogan,
+                max_iterations=max_review_iterations,
             )
             # html render
             self.html_developer = ReActToolCallingMotleyAgent(
@@ -164,9 +179,9 @@ class BannerGeneratorWithText(BaseBannerGenerator):
         max_review_iterations: int = 5,
     ):
         image_description = '''{}.
-        Include text "{}" in the image , with next description "{}"'''.format(image_description,
-                                                                  slogan,
-                                                                  text_description)
+        Include text "{}" in the image , with next description "{}"'''.format(
+            image_description, slogan, text_description
+        )
         super().__init__(image_description, images_dir, slogan, image_size)
 
         html_recommend_tool = HtmlSloganRecommendTool(slogan=self.slogan)

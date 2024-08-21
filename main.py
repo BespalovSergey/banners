@@ -23,8 +23,13 @@ def main():
 
     max_review_iterations = 5
 
-    banner_generator = BannerGeneratorWithText(image_description, text_description, images_dir, slogan,
-                                               max_review_iterations=max_review_iterations)
+    banner_generator = BannerGeneratorWithText(
+        image_description,
+        text_description,
+        images_dir,
+        slogan,
+        max_review_iterations=max_review_iterations,
+    )
     # banner_generator = GptBannerGenerator(
     #     image_description, images_dir, slogan, max_review_iterations=max_review_iterations
     # )
@@ -33,7 +38,7 @@ def main():
 
 if __name__ == "__main__":
     configure_logging(verbose=True)
-    enable_cache()
+    # enable_cache()
     load_dotenv()
     main()
-    disable_cache()
+    # disable_cache()
