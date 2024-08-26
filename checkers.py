@@ -17,7 +17,7 @@ class BaseChecker(ABC):
         pass
 
 
-class HumanChecker(BaseChecker):
+class CliHumanChecker(BaseChecker):
 
     remarks_prefix = {"recommendation": "ask recommendations how"}
     remarks_postfix = {"recommendation": "Need text coordinates (x, y, width, height), color, size, slant text block,"
@@ -42,7 +42,7 @@ class HumanChecker(BaseChecker):
                 remark = "    {}: {} {}".format(prefix, input_result, postfix)
                 remarks.append(remark)
         q.put(None)
-        cv2.destroyAllWindows()
+
         if remarks:
             remarks_text = "update html text:\n{}".format("\n".join(remarks))
             raise InvalidOutput(remarks_text)
