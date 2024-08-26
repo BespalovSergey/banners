@@ -3,6 +3,7 @@ from typing import Dict, Any
 from motleycrew.tools import DallEImageGeneratorTool
 from viewers import BaseViewer
 from .mixins import ViewDecoratorToolMixin
+from viewers import StreamLitImageViewer
 
 
 class DalleImageGeneratorTool(DallEImageGeneratorTool, ViewDecoratorToolMixin):
@@ -24,4 +25,8 @@ class DalleImageGeneratorTool(DallEImageGeneratorTool, ViewDecoratorToolMixin):
         for img_path in results:
             if img_path.startswith("http"):
                 continue
-            self.viewer.view(img_path, args[0])
+
+            view_kwargs = {}
+            if isinstance(self.viewer, StreamLitImageViewer):
+                view_kwargs = {"img_caption": args[0]}
+            self.viewer.view(img_path, **view_kwargs)
