@@ -1,11 +1,11 @@
-from typing import Tuple
+from typing import Tuple, List
 from datetime import datetime
 
 from motleycrew.common.exceptions import InvalidOutput
 from motleycrew.agents import MotleyOutputHandler
 from motleycrew.tools.html_render_tool import HTMLRenderer
 
-from checkers import HumanChecker, GptImageChecker
+from checkers import BaseChecker
 
 from selenium import webdriver
 from motleycrew.common import logger
@@ -106,8 +106,7 @@ class HtmlRenderOutputHandler(MotleyOutputHandler):
 
     def __init__(
         self,
-        human_check: bool = True,
-        gpt_check: bool = False,
+        checkers: List[BaseChecker] = None,
         slogan: str = None,
         max_iterations: int = 5,
         *args,
@@ -115,8 +114,7 @@ class HtmlRenderOutputHandler(MotleyOutputHandler):
     ):
         super().__init__(max_iterations=max_iterations)
         self.renderer = BannerHtmlRenderer(*args, **kwargs)
-        self.human_check = human_check
-        self.gpt_check = gpt_check
+        self.checkers = checkers or []
         self.slogan = slogan
 
     def handle_output(self, output: str):
@@ -133,13 +131,7 @@ class HtmlRenderOutputHandler(MotleyOutputHandler):
             raise InvalidOutput("Html tags not found")
 
         output = self.renderer.render_image(output)
-
-        if self.gpt_check:
-            output_checker = GptImageChecker(text=self.slogan)
-            output_checker.check(output)
-
-        if self.human_check:
-            output_checker = HumanChecker()
-            output_checker.check(output)
+        for checker in self.checkers:
+            checker.check(output)
 
         return {"checked_output": output}

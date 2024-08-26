@@ -1,13 +1,15 @@
 import os
-from typing import Tuple
+from typing import Tuple, List
 
 from motleycrew.tasks import SimpleTask
 from motleycrew.agents.langchain import ReActToolCallingMotleyAgent
-from motleycrew.tools.image.dall_e import DallEImageGeneratorTool
+from tools.dalle_image_generator_tool import DalleImageGeneratorTool
 from tools.image_info_tool import BannerImageParserTool
 from tools.image_description_tool import HtmlSloganRecommendTool
 from tools.remove_text_tool import RemoveTextTool
+from viewers import CliImageViewer
 from motleycrew import MotleyCrew
+from checkers import BaseChecker
 from output_handler import HtmlRenderOutputHandler
 
 
@@ -18,7 +20,9 @@ class BaseBannerGenerator:
         image_description: str,
         images_dir: str,
         slogan: str | None = None,
+        html_render_checkers: List[BaseChecker] = None,
         image_size: Tuple[int, int] = (1024, 1024),
+        max_review_iterations: int = 5
     ):
         self.crew = MotleyCrew()
         self.image_description = image_description
@@ -26,8 +30,14 @@ class BaseBannerGenerator:
         self.slogan = slogan
         self.image_size = image_size
 
+        if self.slogan:
+            self.html_render_output_handler = HtmlRenderOutputHandler(
+                checkers=html_render_checkers, work_dir=images_dir, window_size=self.image_size, slogan=self.slogan,
+                max_iterations=max_review_iterations
+            )
+
         dalle_image_size = "{}x{}".format(image_size[0], image_size[1])
-        image_generate_tool = DallEImageGeneratorTool(
+        image_generate_tool = DalleImageGeneratorTool(viewer=CliImageViewer(scaler=2),
             dall_e_prompt_template="""{text}""", images_directory=self.images_dir, size=dalle_image_size
         )
         # image generate
@@ -59,18 +69,16 @@ class GptBannerGenerator(BaseBannerGenerator):
         image_description: str,
         images_dir: str,
         slogan: str | None = None,
+        html_render_checkers: List[BaseChecker] = None,
         image_size: Tuple[int, int] = (1024, 1024),
         max_review_iterations: int = 5
     ):
-        super().__init__(image_description, images_dir, slogan, image_size)
+        super().__init__(image_description, images_dir, slogan, html_render_checkers, image_size, max_review_iterations)
 
         if self.slogan:
             html_recommend_tool = HtmlSloganRecommendTool(slogan=self.slogan)
             image_info_tool = BannerImageParserTool()
-            html_render_output_handler = HtmlRenderOutputHandler(
-                gpt_check=False, work_dir=images_dir, window_size=self.image_size, slogan=self.slogan,
-                max_iterations=max_review_iterations
-            )
+
             # html render
             self.html_developer = ReActToolCallingMotleyAgent(
                 name="Html coder",
@@ -81,7 +89,7 @@ class GptBannerGenerator(BaseBannerGenerator):
                 # f"You write the paths to the files correctly for {platform.system()} operating system",
                 verbose=True,
                 tools=[html_recommend_tool],
-                output_handler=html_render_output_handler,
+                output_handler=self.html_render_output_handler,
             )
 
             create_html_image = SimpleTask(
@@ -101,6 +109,7 @@ class BannerGenerator(BaseBannerGenerator):
         image_description: str,
         images_dir: str,
         slogan: str | None = None,
+        html_render_checkers: List[BaseChecker] = None,
         image_size: Tuple[int, int] = (1024, 1024),
         font: str = "Arial",
         text_shadow: int | None = None,
@@ -108,17 +117,12 @@ class BannerGenerator(BaseBannerGenerator):
         max_review_iterations: int = 5,
     ):
 
-        super().__init__(image_description, images_dir, slogan, image_size)
+        super().__init__(image_description, images_dir, slogan, html_render_checkers, image_size, max_review_iterations)
         self.font = font
         self.text_shadow = text_shadow
         self.text_background = text_background
 
         if self.slogan:
-            html_render_output_handler = HtmlRenderOutputHandler(
-                work_dir=images_dir,
-                window_size=self.image_size,
-                max_iterations=max_review_iterations,
-            )
             image_info_tool = BannerImageParserTool()
             # html render
             self.html_developer = ReActToolCallingMotleyAgent(
@@ -130,7 +134,7 @@ class BannerGenerator(BaseBannerGenerator):
                 # f"You write the paths to the files correctly for {platform.system()} operating system",
                 verbose=True,
                 tools=[image_info_tool],
-                output_handler=html_render_output_handler,
+                output_handler=self.html_render_output_handler,
             )
             font_description = "make text font ({}),".format(self.font) if self.font else ""
             text_shadow_description = (
@@ -160,6 +164,7 @@ class BannerGeneratorWithText(BaseBannerGenerator):
         text_description: str,
         images_dir: str,
         slogan: str,
+        html_render_checkers: List[BaseChecker] = None,
         image_size: Tuple[int, int] = (1024, 1024),
         max_review_iterations: int = 5,
     ):
@@ -167,17 +172,10 @@ class BannerGeneratorWithText(BaseBannerGenerator):
         Include text "{}" in the image , with next description "{}"'''.format(image_description,
                                                                   slogan,
                                                                   text_description)
-        super().__init__(image_description, images_dir, slogan, image_size)
+        super().__init__(image_description, images_dir, slogan, html_render_checkers, image_size, max_review_iterations)
 
         html_recommend_tool = HtmlSloganRecommendTool(slogan=self.slogan)
         remove_text_tool = RemoveTextTool()
-        html_render_output_handler = HtmlRenderOutputHandler(
-            gpt_check=False,
-            work_dir=images_dir,
-            window_size=self.image_size,
-            slogan=self.slogan,
-            max_iterations=max_review_iterations,
-        )
         # html render
         self.html_developer = ReActToolCallingMotleyAgent(
             name="Html coder",
@@ -188,7 +186,7 @@ class BannerGeneratorWithText(BaseBannerGenerator):
             # f"You write the paths to the files correctly for {platform.system()} operating system",
             verbose=True,
             tools=[remove_text_tool, html_recommend_tool],
-            output_handler=html_render_output_handler,
+            output_handler=self.html_render_output_handler,
         )
         create_html_image = SimpleTask(
             crew=self.crew,
