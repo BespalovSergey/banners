@@ -1,3 +1,4 @@
+import os
 from abc import ABC, abstractmethod
 
 import cv2
@@ -38,8 +39,9 @@ class StreamLitImageViewer(BaseViewer):
 
     def view(self, image_path, img_caption: str = ""):
         st.image(image_path, img_caption)
+        st.text("Image path: {}".format(os.path.abspath(image_path)))
 
     def view_caption(self, subheader: str, text: str = None):
         st.subheader(subheader)
         if text:
-            st.text_area('', text, disabled=True)
+            st.markdown(text)
