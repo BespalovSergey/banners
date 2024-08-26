@@ -17,11 +17,15 @@ class ViewDecoratorToolMixin():
     def view_decorator(self, f: Callable):
 
         def wrapper(*args, **kwargs):
+            self.before_run(*args, **kwargs)
             results = f(*args, **kwargs)
-            self.view_results(results)
+            self.view_results(results, *args, **kwargs)
             return results
 
         return wrapper
+
+    def before_run(self, *args, **kwargs):
+        pass
 
     def view_results(self, results: Any):
         pass
