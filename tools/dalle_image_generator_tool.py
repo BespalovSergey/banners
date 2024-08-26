@@ -12,10 +12,16 @@ class DalleImageGeneratorTool(DallEImageGeneratorTool, ViewDecoratorToolMixin):
         super(DalleImageGeneratorTool, self).__init__(*args, **kwargs)
         ViewDecoratorToolMixin.__init__(self)
 
-    def view_results(self, results: Any):
+    def before_run(self, *args, **kwargs):
+        if self.viewer is None:
+            return
+        subheader = "Generated image with description"
+        self.viewer.view_caption(subheader, args[0])
+
+    def view_results(self, results: Any, *args, **kwargs):
         if self.viewer is None:
             return
         for img_path in results:
             if img_path.startswith("http"):
                 continue
-            self.viewer.view(img_path)
+            self.viewer.view(img_path, args[0])
