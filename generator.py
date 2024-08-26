@@ -3,6 +3,7 @@ from typing import Tuple, List
 
 from motleycrew.tasks import SimpleTask
 from motleycrew.agents.langchain import ReActToolCallingMotleyAgent
+from motleycrew.tools import MotleyTool
 from tools.dalle_image_generator_tool import DalleImageGeneratorTool
 from tools.image_info_tool import BannerImageParserTool
 from tools.image_description_tool import HtmlSloganRecommendTool
@@ -22,7 +23,8 @@ class BaseBannerGenerator:
         slogan: str | None = None,
         html_render_checkers: List[BaseChecker] = None,
         image_size: Tuple[int, int] = (1024, 1024),
-        max_review_iterations: int = 5
+        max_review_iterations: int = 5,
+        image_generate_tool: MotleyTool = None,
     ):
         self.crew = MotleyCrew()
         self.image_description = image_description
@@ -36,10 +38,12 @@ class BaseBannerGenerator:
                 max_iterations=max_review_iterations
             )
 
-        dalle_image_size = "{}x{}".format(image_size[0], image_size[1])
-        image_generate_tool = DalleImageGeneratorTool(viewer=CliImageViewer(scaler=2),
-            dall_e_prompt_template="""{text}""", images_directory=self.images_dir, size=dalle_image_size
-        )
+        if not image_generate_tool:
+            dalle_image_size = "{}x{}".format(image_size[0], image_size[1])
+            image_generate_tool = DalleImageGeneratorTool(viewer=CliImageViewer(scaler=2),
+                dall_e_prompt_template="""{text}""", images_directory=self.images_dir, size=dalle_image_size
+            )
+
         # image generate
         self.advertising_agent = ReActToolCallingMotleyAgent(
             name="Advertising agent",
@@ -167,12 +171,14 @@ class BannerGeneratorWithText(BaseBannerGenerator):
         html_render_checkers: List[BaseChecker] = None,
         image_size: Tuple[int, int] = (1024, 1024),
         max_review_iterations: int = 5,
+        image_generate_tool: MotleyTool = None,
     ):
         image_description = '''{}.
         Include text "{}" in the image , with next description "{}"'''.format(image_description,
                                                                   slogan,
                                                                   text_description)
-        super().__init__(image_description, images_dir, slogan, html_render_checkers, image_size, max_review_iterations)
+        super().__init__(image_description, images_dir, slogan, html_render_checkers, image_size, max_review_iterations,
+                         image_generate_tool)
 
         html_recommend_tool = HtmlSloganRecommendTool(slogan=self.slogan)
         remove_text_tool = RemoveTextTool()
