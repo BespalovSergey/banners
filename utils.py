@@ -1,7 +1,9 @@
 from queue import Queue
-from typing import List, Tuple
+from typing import List, Tuple, Union
+
 import cv2
 import numpy as np
+from PIL import Image, ImageFile
 
 
 def show_image(image_path: str, q: Queue):
@@ -57,3 +59,15 @@ def combining_mask_boxes(mask: np.array, kernel: tuple = (20, 20), iterations: i
     dilated_mask = cv2.dilate(binary_mask, kernel, iterations=iterations)
 
     return dilated_mask
+
+
+def read_image(image_path: str, as_array: bool = True) -> Union[np.ndarray | ImageFile.ImageFile]:
+    img = Image.open(image_path)
+    if as_array:
+        img = np.asarray(img)
+        num_channels = img.shape[2]
+        if num_channels == 3:
+            img = img[:, :, (2, 1, 0)]
+        elif num_channels == 4:
+            img = img[:, :, (2, 1, 0, 3)]
+    return img
