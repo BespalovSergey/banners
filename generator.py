@@ -31,6 +31,7 @@ class BaseBannerGenerator:
         self.images_dir = os.path.abspath(images_dir)
         self.slogan = slogan
         self.image_size = image_size
+        self.tools = []
 
         if self.slogan:
             self.html_render_output_handler = HtmlRenderOutputHandler(
@@ -43,6 +44,8 @@ class BaseBannerGenerator:
             image_generate_tool = DalleImageGeneratorTool(viewer=CliImageViewer(scaler=2),
                 dall_e_prompt_template="""{text}""", images_directory=self.images_dir, size=dalle_image_size
             )
+
+        self.tools.append(image_generate_tool)
 
         # image generate
         self.advertising_agent = ReActToolCallingMotleyAgent(
@@ -81,6 +84,7 @@ class GptBannerGenerator(BaseBannerGenerator):
 
         if self.slogan:
             html_recommend_tool = HtmlSloganRecommendTool(slogan=self.slogan)
+            self.tools.append(html_recommend_tool)
             image_info_tool = BannerImageParserTool()
 
             # html render
@@ -128,6 +132,7 @@ class BannerGenerator(BaseBannerGenerator):
 
         if self.slogan:
             image_info_tool = BannerImageParserTool()
+            self.tools.append(image_info_tool)
             # html render
             self.html_developer = ReActToolCallingMotleyAgent(
                 name="Html coder",
@@ -181,7 +186,10 @@ class BannerGeneratorWithText(BaseBannerGenerator):
                          image_generate_tool)
 
         html_recommend_tool = HtmlSloganRecommendTool(slogan=self.slogan)
+        self.tools.append(html_recommend_tool)
+
         remove_text_tool = RemoveTextTool()
+        self.tools.append(remove_text_tool)
         # html render
         self.html_developer = ReActToolCallingMotleyAgent(
             name="Html coder",
