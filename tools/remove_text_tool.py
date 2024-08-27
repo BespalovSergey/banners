@@ -1,9 +1,8 @@
 import os
-from typing import List, Tuple
+from typing import List, Tuple, Any
 
 import cv2
 import numpy as np
-from dotenv import load_dotenv
 
 
 from langchain.tools import Tool
@@ -14,17 +13,24 @@ from motleycrew.tools import MotleyTool
 from clear_image.text_deleter import TextDeleter
 from clear_image.inpainter import DalleInpainter, Inpainter
 from clear_image.text_detector import KerasOcrTextDetector, TextBox
-from utils import get_points_density, combining_mask_boxes
+from utils import get_points_density, combining_mask_boxes, read_image, bbox_w_h_to_x_max_y_max
+from .mixins import ViewDecoratorToolMixin
+from viewers import BaseViewer, StreamLitItemViewer, StreamLiteItemView
 
 
-class TextRemover:
+class TextRemover():
 
     def __init__(self, num_text_areas: int = 5, point_threshold: float = 0.1):
         self.api_key = os.environ.get("OPENAI_API_KEY")
         self.num_text_areas = num_text_areas
         self.point_threshold = point_threshold
+        self.bboxes = []
+        self.text_area = None
+        super().__init__()
 
     def remove_text(self, image_path: str) -> str:
+        self.bboxes.clear()
+        self.text_area = None
         image_path = image_path.strip()
         if not os.path.exists(image_path):
             raise FileNotFoundError(image_path)
@@ -38,11 +44,12 @@ class TextRemover:
 
         ret_rows = ["Clear image path: {}".format(ret_image_path)]
 
-        boxes = []
         if text_deleter.text_bboxes:
             boxes = self.find_text_boxes(image_path, inpainter, text_deleter.text_bboxes)
+            self.bboxes = boxes
         else:
             text_area = self.find_discharged_area(image_path)
+            self.text_area = text_area
             boxes = [text_area]
 
         if boxes:
@@ -72,6 +79,7 @@ class TextRemover:
             x, y, w, h = cv2.boundingRect((labels_im == label).astype(np.uint8))
             boxes.append((x, y, w, h))
 
+
         boxes.sort(key=lambda x: x[2] * x[3], reverse=True)
         return boxes
 
@@ -80,23 +88,57 @@ class TextRemover:
         h, w = img.shape[:2]
 
         areas_data = get_points_density(img, self.num_text_areas, self.point_threshold)
-        for d in areas_data:
-            print(d)
+
         y, y_max = areas_data[1][0]
         x = int(w * 0.05)
         x_max = w - x
         return x, y, x_max - x, y_max - y
 
 
-class RemoveTextTool(MotleyTool):
+class RemoveTextTool(MotleyTool, ViewDecoratorToolMixin):
 
     def __init__(
         self,
+        viewer: BaseViewer = None
     ):
         """Tool for removing text from image"""
-        remover = TextRemover()
-        langchain_tool = create_render_tool(remover)
-        super().__init__(langchain_tool)
+        self.viewer = viewer
+        self.remover = TextRemover()
+        langchain_tool = create_render_tool(self.remover)
+        MotleyTool.__init__(self, langchain_tool)
+        ViewDecoratorToolMixin.__init__(self)
+
+    def before_run(self, *args, **kwargs):
+        if self.viewer is None:
+            return
+
+        if not isinstance(self.viewer, StreamLitItemViewer):
+            return
+
+        view_data = {
+            "subheader": ("Removing text from image",),
+            "text": ("Image path: {}".format(args[0]),)
+        }
+        self.viewer.view(StreamLiteItemView(view_data), to_history=True)
+
+    def view_results(self, results: Any, *args, **kwargs):
+        if self.viewer is None:
+            return
+
+        if not isinstance(self.viewer, StreamLitItemViewer):
+            return
+
+        img = read_image(args[0], to_bgr=False)
+        bboxes = self.remover.bboxes or [self.remover.text_area]
+        for box in bboxes:
+            x_min, y_min, x_max, y_max = bbox_w_h_to_x_max_y_max(box)
+            img = cv2.rectangle(img, (x_min, y_min), (x_max, y_max), (0, 255, 0), 3)
+
+        caption = "Text bound boxes" if self.remover.bboxes else "Text Area"
+        view_data = {
+            "image": (img, caption)
+        }
+        self.viewer.view(StreamLiteItemView(view_data), to_history=True)
 
 
 class RemoveTextToolInput(BaseModel):
