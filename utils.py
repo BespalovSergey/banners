@@ -5,6 +5,8 @@ import cv2
 import numpy as np
 from PIL import Image, ImageFile
 
+STREAMLIT_HISTORY_KEY = "view_history_steps"
+
 
 def show_image(image_path: str, q: Queue):
     img = cv2.imread(image_path)
