@@ -7,9 +7,6 @@ class ViewDecoratorToolMixin():
         if not hasattr(self, "tool") or not hasattr(self, 'viewer'):
             return
 
-        if self.viewer is None:
-            return
-
         object.__setattr__(
             self.tool, "_run", self.view_decorator(self.tool._run)
         )
@@ -29,3 +26,6 @@ class ViewDecoratorToolMixin():
 
     def view_results(self, results: Any):
         pass
+
+    def set_viewer(self, viewer: "BaseViewer"):
+        self.viewer = viewer
