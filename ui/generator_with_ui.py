@@ -4,6 +4,7 @@ from typing import List, Tuple
 from motleycrew.tools import MotleyTool
 from generator import BannerGeneratorWithText
 from checkers import BaseChecker
+from viewers import StreamLitItemViewer
 
 
 class UiBannerGeneratorWithText(BannerGeneratorWithText):
@@ -31,3 +32,8 @@ class UiBannerGeneratorWithText(BannerGeneratorWithText):
             max_review_iterations=max_review_iterations,
             image_generate_tool=image_generate_tool
         )
+
+        for tool in self.tools:
+            if hasattr(tool, "set_viewer") and tool.viewer is None:
+                tool.set_viewer(StreamLitItemViewer())
+
