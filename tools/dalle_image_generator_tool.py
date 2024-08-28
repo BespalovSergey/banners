@@ -1,9 +1,9 @@
-from typing import Dict, Any
+from typing import Any
 
 from motleycrew.tools import DallEImageGeneratorTool
 from viewers import BaseViewer
 from .mixins import ViewDecoratorToolMixin
-from viewers import StreamLitImageViewer
+from viewers import StreamLitViewer, StreamLiteItemView
 
 
 class DalleImageGeneratorTool(DallEImageGeneratorTool, ViewDecoratorToolMixin):
@@ -16,8 +16,9 @@ class DalleImageGeneratorTool(DallEImageGeneratorTool, ViewDecoratorToolMixin):
     def before_run(self, *args, **kwargs):
         if self.viewer is None:
             return
-        subheader = "Generated image with description"
-        self.viewer.view_caption(subheader, args[0])
+
+        view_data = {"subheader": ("Generated image with description",), "markdown": (args[0],)}
+        self.viewer.view(StreamLiteItemView(view_data), to_history=True)
 
     def view_results(self, results: Any, *args, **kwargs):
         if self.viewer is None:
@@ -26,7 +27,8 @@ class DalleImageGeneratorTool(DallEImageGeneratorTool, ViewDecoratorToolMixin):
             if img_path.startswith("http"):
                 continue
 
-            view_kwargs = {}
-            if isinstance(self.viewer, StreamLitImageViewer):
-                view_kwargs = {"img_caption": args[0]}
-            self.viewer.view(img_path, **view_kwargs)
+            if isinstance(self.viewer, StreamLitViewer):
+                view_data = {"image": (img_path, args[0])}
+                self.viewer.view(StreamLiteItemView(view_data), to_history=True)
+            else:
+                self.viewer.view(img_path)

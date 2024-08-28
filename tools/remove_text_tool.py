@@ -15,10 +15,10 @@ from clear_image.inpainter import DalleInpainter, Inpainter
 from clear_image.text_detector import KerasOcrTextDetector, TextBox
 from utils import get_points_density, combining_mask_boxes, read_image, bbox_w_h_to_x_max_y_max
 from .mixins import ViewDecoratorToolMixin
-from viewers import BaseViewer, StreamLitItemViewer, StreamLiteItemView
+from viewers import BaseViewer, StreamLitItemQueueViewer, StreamLiteItemView
 
 
-class TextRemover():
+class TextRemover:
 
     def __init__(self, num_text_areas: int = 5, point_threshold: float = 0.1):
         self.api_key = os.environ.get("OPENAI_API_KEY")
@@ -79,7 +79,6 @@ class TextRemover():
             x, y, w, h = cv2.boundingRect((labels_im == label).astype(np.uint8))
             boxes.append((x, y, w, h))
 
-
         boxes.sort(key=lambda x: x[2] * x[3], reverse=True)
         return boxes
 
@@ -97,10 +96,7 @@ class TextRemover():
 
 class RemoveTextTool(MotleyTool, ViewDecoratorToolMixin):
 
-    def __init__(
-        self,
-        viewer: BaseViewer = None
-    ):
+    def __init__(self, viewer: BaseViewer = None):
         """Tool for removing text from image"""
         self.viewer = viewer
         self.remover = TextRemover()
@@ -112,12 +108,12 @@ class RemoveTextTool(MotleyTool, ViewDecoratorToolMixin):
         if self.viewer is None:
             return
 
-        if not isinstance(self.viewer, StreamLitItemViewer):
+        if not isinstance(self.viewer, StreamLitItemQueueViewer):
             return
 
         view_data = {
             "subheader": ("Removing text from image",),
-            "text": ("Image path: {}".format(args[0]),)
+            "text": ("Image path: {}".format(os.path.abspath(args[0])),),
         }
         self.viewer.view(StreamLiteItemView(view_data), to_history=True)
 
@@ -125,7 +121,7 @@ class RemoveTextTool(MotleyTool, ViewDecoratorToolMixin):
         if self.viewer is None:
             return
 
-        if not isinstance(self.viewer, StreamLitItemViewer):
+        if not isinstance(self.viewer, StreamLitItemQueueViewer):
             return
 
         img = read_image(args[0], to_bgr=False)
@@ -135,9 +131,7 @@ class RemoveTextTool(MotleyTool, ViewDecoratorToolMixin):
             img = cv2.rectangle(img, (x_min, y_min), (x_max, y_max), (0, 255, 0), 3)
 
         caption = "Text bound boxes" if self.remover.bboxes else "Text Area"
-        view_data = {
-            "image": (img, caption)
-        }
+        view_data = {"image": (img, caption)}
         self.viewer.view(StreamLiteItemView(view_data), to_history=True)
 
 
