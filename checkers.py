@@ -3,11 +3,13 @@ from queue import Queue
 from threading import Thread
 import time
 
-import cv2
-
 from utils import show_image
 from motleycrew.common.exceptions import InvalidOutput
 from tools.image_description_tool import GptImageProcessor
+from viewers import StreamLiteItemView, StreamLitItemQueueViewer, StreamLitItemFormView
+
+
+REMARKS_WIDGET_KEY = "remarks"
 
 
 class BaseChecker(ABC):
@@ -20,8 +22,10 @@ class BaseChecker(ABC):
 class CliHumanChecker(BaseChecker):
 
     remarks_prefix = {"recommendation": "ask recommendations how"}
-    remarks_postfix = {"recommendation": "Need text coordinates (x, y, width, height), color, size, slant text block,"
-                                         " font, add the slogan text to the recommendation request", }
+    remarks_postfix = {
+        "recommendation": "Need text coordinates (x, y, width, height), color, size, slant text block,"
+        " font, add the slogan text to the recommendation request",
+    }
 
     def check(self, image_path: str) -> bool:
         # show image
@@ -38,7 +42,7 @@ class CliHumanChecker(BaseChecker):
             input_result = input(input_text)
             if input_result:
                 prefix = self.remarks_prefix.get(feature, feature)
-                postfix = self.remarks_postfix.get(feature, '')
+                postfix = self.remarks_postfix.get(feature, "")
                 remark = "    {}: {} {}".format(prefix, input_result, postfix)
                 remarks.append(remark)
         q.put(None)
@@ -68,4 +72,56 @@ class GptImageChecker(BaseChecker):
 
         if result_ok_symbols.lower() not in image_result.lower():
             raise InvalidOutput(image_result)
+        return True
+
+
+class StreamLitHumanChecker(BaseChecker):
+
+    def __init__(
+        self,
+        iteration: int = 0,
+        viewer: StreamLitItemQueueViewer = None,
+        remarks_queue: Queue = None,
+    ):
+        self.iteration = iteration
+        self.viewer = viewer
+        self.remarks_queue = remarks_queue
+
+    def check(self, image_path: str) -> bool:
+        self.iteration += 1
+        if not isinstance(self.viewer, StreamLitItemQueueViewer):
+            raise ValueError("Viewer must be init  StreamLitItemQueueViewer")
+
+        start_check_view_data = {
+            "subheader": ("Human check: {}".format(self.iteration),),
+            "text": ("Image path: {}".format(image_path),),
+            "image": (image_path, "Checked image"),
+        }
+        self.viewer.view(StreamLiteItemView(start_check_view_data), to_history=True)
+
+        form_view_items = {
+            "text_area": {"label": "Remarks for html generation", "key": REMARKS_WIDGET_KEY},
+            "form_submit_button": ("Apply",),
+        }
+
+        form_item_view = StreamLitItemFormView(
+            form_key="check_form_{}".format(self.iteration),
+            items=StreamLiteItemView(form_view_items),
+        )
+
+        form_view_data = {"form": form_item_view}
+        self.viewer.view(StreamLiteItemView(form_view_data), to_history=False)
+
+        if self.remarks_queue is None:
+            return True
+
+        remarks = self.remarks_queue.get()
+        if remarks:
+            remarks_title = "Remarks for html generation:"
+            remarks_view_data = {"text": (remarks_title,), "markdown": (remarks,)}
+
+            self.viewer.view(StreamLiteItemView(remarks_view_data), to_history=True)
+
+            raise InvalidOutput("{}: {}".format(remarks_title, remarks))
+
         return True
