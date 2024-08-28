@@ -1,11 +1,11 @@
-import os
 from abc import ABC, abstractmethod
 from typing import Any
+from queue import Queue
 
 import cv2
 import streamlit as st
 
-from utils import read_image, STREAMLIT_HISTORY_KEY
+from utils import read_image
 
 
 class BaseViewer(ABC):
@@ -39,7 +39,7 @@ class CliImageViewer(BaseViewer):
         cv2.destroyAllWindows()
 
 
-# Streamlit classes
+# Streamlit classes and functions
 
 class StreamLiteItemView:
 
@@ -51,53 +51,79 @@ class StreamLiteItemView:
         return self.__data
 
 
+class StreamLitItemFormView:
+    def __init__(self, form_key: str, items: StreamLiteItemView):
+        self.form_key = form_key
+        self.items = items
+
+
+def streamlit_render(view_data: StreamLiteItemView):
+    for func_name, args in view_data.data.items():
+        if func_name == "form":
+            streamlit_render_form(args)
+            continue
+
+        func = getattr(st, func_name, None)
+
+        if func is None:
+            continue
+
+        if isinstance(args, dict):
+            func(**args)
+        else:
+            func(*args)
+
+
+def streamlit_render_form(form_item: StreamLitItemFormView):
+    with st.form(key=form_item.form_key):
+        streamlit_render(form_item.items)
+
+
+def streamlit_queue_render(q: Queue, exit_value: Any = None):
+    while True:
+        view_data = q.get()
+
+        if view_data == exit_value:
+            break
+
+        if not isinstance(view_data, StreamLiteItemView):
+            continue
+
+        streamlit_render(view_data)
+
+
 class StreamLitViewer(BaseViewer):
+
+    def __init__(self, history_storage: Any = None):
+        self.history_storage = history_storage
 
     def view(self, *args, **kwargs):
         pass
 
     def to_history(self, history_item: StreamLiteItemView):
-        if st.session_state.get(STREAMLIT_HISTORY_KEY, None) is None:
-            st.session_state[STREAMLIT_HISTORY_KEY] = []
-        st.session_state.get(STREAMLIT_HISTORY_KEY).append(history_item)
-
-
-class StreamLitImageViewer(StreamLitViewer):
-
-    def view(self, image_path, img_caption: str = ""):
-        st.image(image_path, img_caption)
-        st.text("Image path: {}".format(os.path.abspath(image_path)))
-
-    def view_caption(self, subheader: str, text: str = None):
-        st.subheader(subheader)
-        if text:
-            st.markdown(text)
+        if self.history_storage is None:
+            return
+        self.history_storage.save_history(history_item)
 
 
 class StreamLitItemViewer(StreamLitViewer):
 
-    def view(self, view_data: StreamLiteItemView, *args, to_history: bool = False,  **kwargs):
+    def view(self, view_data: StreamLiteItemView, *args, to_history: bool = True,  **kwargs):
         if to_history:
             self.to_history(view_data)
+        streamlit_render(view_data)
 
-        self._view_item(view_data)
 
-    def view_caption(self, view_data: StreamLiteItemView, *args, to_history: bool = False,  **kwargs):
+class StreamLitItemQueueViewer(StreamLitViewer):
+
+    def __init__(self, view_queue: Queue, storage: Any = None):
+        self.view_queue = view_queue
+        super().__init__(history_storage=storage)
+
+    def view(self, view_data: StreamLiteItemView, *args, to_history: bool = True,  **kwargs):
         if to_history:
             self.to_history(view_data)
-        self._view_item(view_data)
-
-    @staticmethod
-    def _view_item(view_data: StreamLiteItemView, *args, **kwargs):
-        for func_name, args in view_data.data.items():
-            print("item viewer: ", func_name, args)
-
-            func = getattr(st, func_name, None)
-            if func is None:
-                print("func is None")
-                continue
-            print("run func: ", func_name)
-            func(*args)
+        self.view_queue.put(view_data)
 
 
 
