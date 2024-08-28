@@ -35,14 +35,20 @@ class BaseBannerGenerator:
 
         if self.slogan:
             self.html_render_output_handler = HtmlRenderOutputHandler(
-                checkers=html_render_checkers, work_dir=images_dir, window_size=self.image_size, slogan=self.slogan,
-                max_iterations=max_review_iterations
+                checkers=html_render_checkers,
+                work_dir=images_dir,
+                window_size=self.image_size,
+                slogan=self.slogan,
+                max_iterations=max_review_iterations,
             )
 
         if not image_generate_tool:
             dalle_image_size = "{}x{}".format(image_size[0], image_size[1])
-            image_generate_tool = DalleImageGeneratorTool(viewer=CliImageViewer(scaler=2),
-                dall_e_prompt_template="""{text}""", images_directory=self.images_dir, size=dalle_image_size
+            image_generate_tool = DalleImageGeneratorTool(
+                viewer=CliImageViewer(scaler=2),
+                dall_e_prompt_template="""{text}""",
+                images_directory=self.images_dir,
+                size=dalle_image_size,
             )
 
         self.tools.append(image_generate_tool)
@@ -78,9 +84,16 @@ class GptBannerGenerator(BaseBannerGenerator):
         slogan: str | None = None,
         html_render_checkers: List[BaseChecker] = None,
         image_size: Tuple[int, int] = (1024, 1024),
-        max_review_iterations: int = 5
+        max_review_iterations: int = 5,
     ):
-        super().__init__(image_description, images_dir, slogan, html_render_checkers, image_size, max_review_iterations)
+        super().__init__(
+            image_description,
+            images_dir,
+            slogan,
+            html_render_checkers,
+            image_size,
+            max_review_iterations,
+        )
 
         if self.slogan:
             html_recommend_tool = HtmlSloganRecommendTool(slogan=self.slogan)
@@ -125,7 +138,14 @@ class BannerGenerator(BaseBannerGenerator):
         max_review_iterations: int = 5,
     ):
 
-        super().__init__(image_description, images_dir, slogan, html_render_checkers, image_size, max_review_iterations)
+        super().__init__(
+            image_description,
+            images_dir,
+            slogan,
+            html_render_checkers,
+            image_size,
+            max_review_iterations,
+        )
         self.font = font
         self.text_shadow = text_shadow
         self.text_background = text_background
@@ -179,14 +199,21 @@ class BannerGeneratorWithText(BaseBannerGenerator):
         image_generate_tool: MotleyTool = None,
     ):
         image_description = '''{}.
-        Include text "{}" in the image , with next description "{}"'''.format(image_description,
-                                                                  slogan,
-                                                                  text_description)
-        super().__init__(image_description, images_dir, slogan, html_render_checkers, image_size, max_review_iterations,
-                         image_generate_tool)
+        Include text "{}" in the image , with next description "{}"'''.format(
+            image_description, slogan, text_description
+        )
+        super().__init__(
+            image_description,
+            images_dir,
+            slogan,
+            html_render_checkers,
+            image_size,
+            max_review_iterations,
+            image_generate_tool,
+        )
 
-        html_recommend_tool = HtmlSloganRecommendTool(slogan=self.slogan)
-        self.tools.append(html_recommend_tool)
+        self.html_recommend_tool = HtmlSloganRecommendTool(slogan=self.slogan)
+        self.tools.append(self.html_recommend_tool)
 
         remove_text_tool = RemoveTextTool()
         self.tools.append(remove_text_tool)
@@ -199,7 +226,7 @@ class BannerGeneratorWithText(BaseBannerGenerator):
                           carefully write down the absolute paths to the images use only a slash as a separator.""",
             # f"You write the paths to the files correctly for {platform.system()} operating system",
             verbose=True,
-            tools=[remove_text_tool, html_recommend_tool],
+            tools=[remove_text_tool, self.html_recommend_tool],
             output_handler=self.html_render_output_handler,
         )
         create_html_image = SimpleTask(
