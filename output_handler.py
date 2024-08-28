@@ -6,6 +6,7 @@ from motleycrew.agents import MotleyOutputHandler
 from motleycrew.tools.html_render_tool import HTMLRenderer
 
 from checkers import BaseChecker
+from viewers import BaseViewer, StreamLitItemQueueViewer, StreamLiteItemView
 
 from selenium import webdriver
 from motleycrew.common import logger
@@ -109,16 +110,27 @@ class HtmlRenderOutputHandler(MotleyOutputHandler):
         checkers: List[BaseChecker] = None,
         slogan: str = None,
         max_iterations: int = 5,
+        viewer: BaseViewer = None,
         *args,
         **kwargs
     ):
         super().__init__(max_iterations=max_iterations)
         self.renderer = BannerHtmlRenderer(*args, **kwargs)
         self.checkers = checkers or []
-        self.slogan = slogan
+        self.slogan = slogan,
+        self.viewer = viewer
+        self.iteration = 0
 
     def handle_output(self, output: str):
         # check html tags
+        self.iteration += 1
+        if isinstance(self.viewer, StreamLitItemQueueViewer):
+            view_data = {
+                "subheader": ("Html output handler iteration: {}".format(self.iteration),),
+                "code": (output,)
+            }
+            self.viewer.view(StreamLiteItemView(view_data))
+
         checked_tags = ("html", "head")
         is_html = False
         for tag in checked_tags:
@@ -128,8 +140,19 @@ class HtmlRenderOutputHandler(MotleyOutputHandler):
                 is_html = True
                 break
         if not is_html:
-            raise InvalidOutput("Html tags not found")
+            msg = "Html tags not found"
+            if isinstance(self.viewer, StreamLitItemQueueViewer):
+                view_data = {
+                    "text": ("Invalid output: {}".format(msg),)
+                }
+                self.viewer.view(StreamLiteItemView(view_data))
+            raise InvalidOutput(msg)
 
+        if isinstance(self.viewer, StreamLitItemQueueViewer):
+            view_data = {
+                "text": ("Rendering image ...",)
+            }
+            self.viewer.view(StreamLiteItemView(view_data))
         output = self.renderer.render_image(output)
         for checker in self.checkers:
             checker.check(output)
