@@ -83,6 +83,6 @@ def read_image(image_path: str, as_array: bool = True, to_bgr: bool = True) -> U
 def bbox_w_h_to_x_max_y_max(box: tuple):
     x_min = box[0]
     y_min = box[1]
-    x_max = box[2] - box[0]
-    y_max = box[3] - box[1]
+    x_max = box[0] + box[2]
+    y_max = box[1] + box[3]
     return x_min, y_min, x_max, y_max
