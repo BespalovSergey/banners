@@ -13,9 +13,9 @@ class ViewDecoratorToolMixin():
 
     def view_decorator(self, f: Callable):
 
-        def wrapper(*args, **kwargs):
+        def wrapper(*args, config=None, **kwargs):
             self.before_run(*args, **kwargs)
-            results = f(*args, **kwargs)
+            results = f(*args, config=config, **kwargs)
             self.view_results(results, *args, **kwargs)
             return results
 
@@ -24,7 +24,7 @@ class ViewDecoratorToolMixin():
     def before_run(self, *args, **kwargs):
         pass
 
-    def view_results(self, results: Any):
+    def view_results(self, results: Any, *args, **kwargs):
         pass
 
     def set_viewer(self, viewer: "BaseViewer"):
