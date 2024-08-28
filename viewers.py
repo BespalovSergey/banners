@@ -26,7 +26,7 @@ class CliImageViewer(BaseViewer):
     def __init__(self, scaler: int = None):
         self.scaler = scaler
 
-    def view(self, image_path: str, window_name: str = None):
+    def view(self, image_path: str, window_name: str = None, **kwargs):
         window_name = window_name or "image"
         img = read_image(image_path)
         if self.scaler:
