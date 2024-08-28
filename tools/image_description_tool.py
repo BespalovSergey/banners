@@ -1,4 +1,5 @@
 import os
+from typing import Any
 import base64
 
 import openai
@@ -6,6 +7,9 @@ from langchain.tools import Tool, StructuredTool
 from langchain_core.pydantic_v1 import BaseModel, Field
 
 from motleycrew.tools import MotleyTool
+
+from .mixins import ViewDecoratorToolMixin
+from viewers import StreamLitItemViewer, BaseViewer
 
 
 class GptImageProcessor:
@@ -62,11 +66,12 @@ class GptImageProcessor:
         return chat_message.content
 
 
-class HtmlSloganRecommendTool(MotleyTool):
+class HtmlSloganRecommendTool(MotleyTool, ViewDecoratorToolMixin):
 
-    def __init__(self, slogan: str):
+    def __init__(self, slogan: str, viewer: BaseViewer = None):
         """Tool for banner parse image
         """
+        self.viewer = viewer
         prompt = '''Briefly describe the image, and give recommendations on generating html code to place 
         the text '{}' above the image. It is necessary to get recommendations on 
         (color, font, size, location and decoration) of the text.
@@ -74,6 +79,21 @@ class HtmlSloganRecommendTool(MotleyTool):
         renderer = GptImageProcessor(prompt=prompt)
         langchain_tool = create_render_tool(renderer)
         super().__init__(langchain_tool)
+        ViewDecoratorToolMixin.__init__(self)
+
+    def before_run(self, *args, **kwargs):
+        if self.viewer is None:
+            return
+
+        if not isinstance(self.viewer, StreamLitItemViewer):
+            return
+
+    def view_results(self, results: Any, *args, **kwargs):
+        if self.viewer is None:
+            return
+
+        if not isinstance(self.viewer, StreamLitItemViewer):
+            return
 
 
 class HtmlSloganRecommendToolInput(BaseModel):
