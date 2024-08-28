@@ -51,8 +51,18 @@ class UiBannerGeneratorWithText(BannerGeneratorWithText):
                 tool.set_viewer(StreamLitItemQueueViewer(self.__render_queue, self))
 
     def run(self):
-        result = super().run()
-        self.__render_queue.put(None)
+        result = None
+        try:
+            result = super().run()
+        except Exception as e:
+            view_data = {
+                "subheader": ("Error:",),
+                "code": (str(e),)
+            }
+            self.__render_queue.put(StreamLiteItemView(view_data))
+        finally:
+            self.__render_queue.put(None)
+
         return result
 
     @property
