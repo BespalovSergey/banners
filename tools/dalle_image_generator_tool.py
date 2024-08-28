@@ -17,8 +17,9 @@ class DalleImageGeneratorTool(DallEImageGeneratorTool, ViewDecoratorToolMixin):
         if self.viewer is None:
             return
 
-        view_data = {"subheader": ("Generated image with description",), "markdown": (args[0],)}
-        self.viewer.view(StreamLiteItemView(view_data), to_history=True)
+        if isinstance(self.viewer, StreamLitViewer):
+            view_data = {"subheader": ("Generated image with description",), "markdown": (args[0],)}
+            self.viewer.view(StreamLiteItemView(view_data), to_history=True)
 
     def view_results(self, results: Any, *args, **kwargs):
         if self.viewer is None:
