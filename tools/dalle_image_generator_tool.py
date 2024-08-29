@@ -2,16 +2,16 @@ from typing import Any
 
 from motleycrew.tools import DallEImageGeneratorTool
 from viewers import BaseViewer
-from .mixins import ViewDecoratorToolMixin
+from .mixins import ViewDecoratorImageGenerationMixin
 from viewers import StreamLitViewer, StreamLiteItemView
 
 
-class DalleImageGeneratorTool(DallEImageGeneratorTool, ViewDecoratorToolMixin):
+class DalleImageGeneratorTool(DallEImageGeneratorTool, ViewDecoratorImageGenerationMixin):
 
     def __init__(self, *args, viewer: BaseViewer = None, **kwargs):
         self.viewer = viewer
         super(DalleImageGeneratorTool, self).__init__(*args, **kwargs)
-        ViewDecoratorToolMixin.__init__(self)
+        ViewDecoratorImageGenerationMixin.__init__(self)
 
     def before_run(self, *args, **kwargs):
         if self.viewer is None:

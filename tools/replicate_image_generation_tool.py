@@ -2,17 +2,17 @@ from typing import Any
 
 from motleycrew.tools.image.replicate_tool import ReplicateImageGeneratorTool
 
-from .mixins import ViewDecoratorToolMixin
+from .mixins import ViewDecoratorImageGenerationMixin
 from viewers import BaseViewer, StreamLitViewer, StreamLiteItemView
 from utils import convert_image_format
 
 
-class ReplicateImageGenerationTool(ReplicateImageGeneratorTool, ViewDecoratorToolMixin):
+class ReplicateImageGenerationTool(ReplicateImageGeneratorTool, ViewDecoratorImageGenerationMixin):
 
     def __init__(self, *args, viewer: BaseViewer = None, **kwargs):
         self.viewer = viewer
         super(ReplicateImageGenerationTool, self).__init__(*args, **kwargs)
-        ViewDecoratorToolMixin.__init__(self)
+        ViewDecoratorImageGenerationMixin.__init__(self)
 
     def before_run(self, *args, **kwargs):
         if self.viewer is None:
@@ -35,9 +35,12 @@ class ReplicateImageGenerationTool(ReplicateImageGeneratorTool, ViewDecoratorToo
             else:
                 self.viewer.view(img_path)
 
-    def check_tool_results(self, results: Any) -> Any:
+    def program_check_tool_results(self, results: Any) -> Any:
         checked_results = []
         for image_path in results:
             checked_image_path = convert_image_format(image_path)
             checked_results.append(checked_image_path)
         return checked_results
+
+    def human_check_results(self, results: Any) -> Any:
+        return results
