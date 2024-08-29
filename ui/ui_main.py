@@ -10,8 +10,9 @@ sys.path.append(os.path.abspath("."))
 import streamlit as st
 
 from checkers import StreamLitHumanChecker, REMARKS_WIDGET_KEY
+from tools.mixins import IMAGE_GENERATION_REMARKS_WIDGET_KEY
 from generator_with_ui import UiBannerGeneratorWithText
-from ui_utils import IMAGE_GENERATORS, init_image_generator, enable_motleycache
+from ui_utils import IMAGE_GENERATORS, init_image_generator, enable_motleycache, find_remarks
 from viewers import StreamLitItemQueueViewer, streamlit_queue_render
 
 from motleycache.http_cache import FORCED_CACHE_BLACKLIST
@@ -94,10 +95,12 @@ def main():
         history = generator.get_history()
         for view_item in history:
             viewer.view(view_item, to_history=False)
-        remarks = st.session_state.get(REMARKS_WIDGET_KEY)
+
+        remarks, widget_key = find_remarks(REMARKS_WIDGET_KEY, IMAGE_GENERATION_REMARKS_WIDGET_KEY)
         if remarks:
             generator.put_remarks(remarks)
-            st.session_state[REMARKS_WIDGET_KEY] = None
+            if widget_key:
+                st.session_state[widget_key] = None
         else:
             generator.put_remarks(None)
 

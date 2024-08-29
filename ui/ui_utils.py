@@ -1,4 +1,6 @@
-from typing import Tuple
+from typing import Tuple, Union
+
+import streamlit as st
 
 from motleycrew.tools import MotleyTool
 from motleycache import enable_cache, disable_cache
@@ -54,3 +56,15 @@ def init_image_generator(
             height=image_size[1],
         )
     return generator
+
+
+def find_remarks(*args) -> Tuple[Union[str | None], Union[str | None]]:
+    """
+    Find user remarks:
+    args: str , key widgets with  remarks
+    """
+    for widget_key in args:
+        remark = st.session_state.get(widget_key, None)
+        if remark is not None:
+            return remark, widget_key
+    return None, None

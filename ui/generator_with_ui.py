@@ -50,6 +50,9 @@ class UiBannerGeneratorWithText(BannerGeneratorWithText):
             if hasattr(tool, "set_viewer") and tool.viewer is None:
                 tool.set_viewer(StreamLitItemQueueViewer(self.__render_queue, self))
 
+            if hasattr(tool, "set_remark_queue"):
+                tool.set_remark_queue(self.__remarks_queue)
+
     def run(self):
         result = None
         try:
@@ -84,4 +87,3 @@ class UiBannerGeneratorWithText(BannerGeneratorWithText):
     def reset_view(self):
         self.__render_queue.put(None)
         self.__render_queue.join()
-
