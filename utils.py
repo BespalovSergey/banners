@@ -1,3 +1,4 @@
+import os
 from queue import Queue
 from typing import List, Tuple, Union
 
@@ -63,7 +64,9 @@ def combining_mask_boxes(mask: np.array, kernel: tuple = (20, 20), iterations: i
     return dilated_mask
 
 
-def read_image(image_path: str, as_array: bool = True, to_bgr: bool = True) -> Union[np.ndarray | ImageFile.ImageFile]:
+def read_image(
+    image_path: str, as_array: bool = True, to_bgr: bool = True
+) -> Union[np.ndarray | ImageFile.ImageFile]:
     img = Image.open(image_path)
 
     if as_array:
@@ -86,3 +89,24 @@ def bbox_w_h_to_x_max_y_max(box: tuple):
     x_max = box[0] + box[2]
     y_max = box[1] + box[3]
     return x_min, y_min, x_max, y_max
+
+
+def convert_image_format(
+    image_path: str, target_format: str = "png", is_delete_original: bool = True
+) -> str:
+    image_path_not_ext, ext = os.path.splitext(image_path)
+
+    if ext == ".{}".format(target_format):
+        return image_path
+
+    save_image_path = "{}.{}".format(image_path_not_ext, target_format)
+    image = Image.open(image_path)
+    image.save(save_image_path)
+
+    try:
+        if is_delete_original:
+            os.remove(image_path)
+    except Exception:
+        pass
+
+    return save_image_path
