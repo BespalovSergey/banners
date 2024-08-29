@@ -47,13 +47,16 @@ def main():
         clear_submited = st.form_submit_button("Clear results")
 
     if clear_submited:
-        if generator:
-            generator.put_remarks(None)
-        generator = None
-        st.session_state[generator_key] = generator
+        if generator is not None:
+            generator.stop()
+            generator = None
+            st.session_state[generator_key] = generator
         return
 
     if submited:
+        if generator is not None:
+            generator.stop()
+
         # check fields:
         is_valid_fields = True
         for text, label in (

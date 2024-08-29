@@ -110,3 +110,9 @@ def convert_image_format(
         pass
 
     return save_image_path
+
+
+def clear_queue(q: Queue):
+    while not q.empty():
+        q.get()
+        q.task_done()

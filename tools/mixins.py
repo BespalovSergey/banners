@@ -1,6 +1,8 @@
 from typing import Callable, Any
+from threading import Event
 from queue import Queue
 from viewers import StreamLitViewer, StreamLiteItemView, StreamLitItemFormView
+from exceptions import RunStopException
 
 
 IMAGE_GENERATION_REMARKS_WIDGET_KEY = "image_generation_remark"
@@ -9,6 +11,7 @@ IMAGE_GENERATION_REMARKS_WIDGET_KEY = "image_generation_remark"
 class ViewDecoratorToolMixin:
 
     def __init__(self, *args, **kwargs):
+        self.stop_event = None
         if not hasattr(self, "tool") or not hasattr(self, "viewer"):
             return
 
@@ -17,14 +20,25 @@ class ViewDecoratorToolMixin:
     def view_decorator(self, f: Callable):
 
         def wrapper(*args, config=None, **kwargs):
+            except_message_template = "Stop on tool {}, {}".format(self.name, "{}")
+
+            self.check_stopping(except_message_template.format("before tool run"))
+
             self.before_run(*args, **kwargs)
             results = f(*args, config=config, **kwargs)
+            self.check_stopping(except_message_template.format("after tool run"))
+
             results = self.program_check_tool_results(results)
             self.view_results(results, *args, **kwargs)
             results = self.human_check_results(results)
             return results
 
         return wrapper
+
+    def check_stopping(self, exception_message: str):
+        if isinstance(self.stop_event, Event):
+            if self.stop_event.is_set():
+                raise RunStopException(exception_message)
 
     def before_run(self, *args, **kwargs):
         pass
@@ -40,6 +54,9 @@ class ViewDecoratorToolMixin:
 
     def human_check_results(self, results: Any) -> Any:
         return results
+
+    def set_stop_event(self, e: Event):
+        self.stop_event = e
 
 
 class ViewDecoratorRemarksMixin(ViewDecoratorToolMixin):
