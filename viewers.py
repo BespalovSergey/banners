@@ -84,12 +84,13 @@ def streamlit_queue_render(q: Queue, exit_value: Any = None):
         view_data = q.get()
 
         if view_data == exit_value:
+            q.task_done()
             break
 
         if not isinstance(view_data, StreamLiteItemView):
             continue
-
         streamlit_render(view_data)
+        q.task_done()
 
 
 class StreamLitViewer(BaseViewer):
