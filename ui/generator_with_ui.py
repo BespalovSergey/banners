@@ -80,3 +80,8 @@ class UiBannerGeneratorWithText(BannerGeneratorWithText):
 
     def put_remarks(self, remark: str):
         self.__remarks_queue.put(remark)
+
+    def reset_view(self):
+        self.__render_queue.put(None)
+        self.__render_queue.join()
+

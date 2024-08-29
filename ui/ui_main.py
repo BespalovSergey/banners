@@ -89,6 +89,7 @@ def main():
         t.start()
 
     elif generator is not None:
+        generator.reset_view()
         viewer = StreamLitItemQueueViewer(generator.render_queue)
         history = generator.get_history()
         for view_item in history:
