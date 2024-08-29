@@ -3,7 +3,6 @@ import sys
 from threading import Thread
 
 from motleycrew.common.logging import logger, configure_logging
-from motleycache import enable_cache, disable_cache
 from dotenv import load_dotenv
 
 sys.path.append(os.path.abspath("."))
@@ -12,7 +11,7 @@ import streamlit as st
 
 from checkers import StreamLitHumanChecker, REMARKS_WIDGET_KEY
 from generator_with_ui import UiBannerGeneratorWithText
-from tools.dalle_image_generator_tool import DalleImageGeneratorTool
+from ui_utils import IMAGE_GENERATORS, init_image_generator, enable_motleycache
 from viewers import StreamLitItemQueueViewer, streamlit_queue_render
 
 from motleycache.http_cache import FORCED_CACHE_BLACKLIST
@@ -20,7 +19,7 @@ from motleycache.http_cache import FORCED_CACHE_BLACKLIST
 FORCED_CACHE_BLACKLIST.append("*//api.openai.com/v1/images/edits*")
 
 configure_logging(verbose=True)
-enable_cache()
+enable_motleycache()
 load_dotenv()
 
 
@@ -29,6 +28,7 @@ def main():
     st.header("Banner generation")
     generator = st.session_state.get(generator_key)
 
+    image_generator_label = "Image generator"
     image_description_label = "Image description"
     text_description_label = "Text description"
     slogan_label = "Slogan"
@@ -36,6 +36,7 @@ def main():
 
     with st.sidebar.form("form"):
         images_dir = st.text_input(images_dir_label, "banner_images")
+        image_generator_name = st.selectbox(image_generator_label, IMAGE_GENERATORS)
         image_description = st.text_area(image_description_label, "Sun day")
         text_description = st.text_area(text_description_label, "Large text")
         slogan = st.text_area(slogan_label, "Good day")
@@ -72,10 +73,7 @@ def main():
             os.makedirs(images_dir, exist_ok=True)
         images_dir = os.path.abspath(images_dir)
 
-        dalle_image_size = "{}x{}".format(image_size[0], image_size[1])
-        image_generate_tool = DalleImageGeneratorTool(
-            dall_e_prompt_template="""{text}""", images_directory=images_dir, size=dalle_image_size
-        )
+        image_generate_tool = init_image_generator(image_generator_name, images_dir, image_size)
 
         generator = UiBannerGeneratorWithText(
             image_description=image_description,
