@@ -41,6 +41,3 @@ class ReplicateImageGenerationTool(ReplicateImageGeneratorTool, ViewDecoratorIma
             checked_image_path = convert_image_format(image_path)
             checked_results.append(checked_image_path)
         return checked_results
-
-    def human_check_results(self, results: Any) -> Any:
-        return results
