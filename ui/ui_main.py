@@ -12,7 +12,7 @@ import streamlit as st
 from checkers import StreamLitHumanChecker, REMARKS_WIDGET_KEY
 from tools.mixins import IMAGE_GENERATION_REMARKS_WIDGET_KEY
 from generator_with_ui import UiBannerGeneratorWithText
-from ui_utils import IMAGE_GENERATORS, init_image_generator, enable_motleycache, find_remarks
+from ui_utils import IMAGE_GENERATORS, init_image_generator, find_remarks
 from viewers import StreamLitItemQueueViewer, streamlit_queue_render
 
 from motleycache.http_cache import FORCED_CACHE_BLACKLIST
@@ -20,7 +20,6 @@ from motleycache.http_cache import FORCED_CACHE_BLACKLIST
 FORCED_CACHE_BLACKLIST.append("*//api.openai.com/v1/images/edits*")
 
 configure_logging(verbose=True)
-enable_motleycache()
 load_dotenv()
 
 
@@ -42,6 +41,7 @@ def main():
         text_description = st.text_area(text_description_label, "Large text")
         slogan = st.text_area(slogan_label, "Good day")
         max_review_iterations = st.number_input("Output handler iterations", 1, 100, 5)
+        is_enable_cache = st.toggle("Enable motleycache (does not work with Replicate)")
         image_size = (1024, 1024)
         submited = st.form_submit_button("Submit")
         clear_submited = st.form_submit_button("Clear results")
@@ -77,7 +77,7 @@ def main():
             os.makedirs(images_dir, exist_ok=True)
         images_dir = os.path.abspath(images_dir)
 
-        image_generate_tool = init_image_generator(image_generator_name, images_dir, image_size)
+        image_generate_tool = init_image_generator(image_generator_name, images_dir, image_size, is_enable_cache)
 
         generator = UiBannerGeneratorWithText(
             image_description=image_description,
