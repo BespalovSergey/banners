@@ -35,14 +35,16 @@ def main():
     images_dir_label = "Image dir"
 
     with st.sidebar.form("form"):
-        images_dir = st.text_input(images_dir_label, "banner_images")
-        image_generator_name = st.selectbox(image_generator_label, IMAGE_GENERATORS)
         image_description = st.text_area(image_description_label, "Sun day")
         text_description = st.text_area(text_description_label, "Large text")
         slogan = st.text_area(slogan_label, "Good day")
         max_review_iterations = st.number_input("Output handler iterations", 1, 100, 5)
-        is_enable_cache = st.toggle("Enable motleycache (does not work with Replicate)")
         image_size = (1024, 1024)
+        with st.expander("Image generation settings"):
+            images_dir = st.text_input(images_dir_label, "banner_images")
+            image_generator_name = st.selectbox(image_generator_label, IMAGE_GENERATORS)
+            is_enable_cache = st.toggle("Enable motleycache (does not work with Replicate)")
+
         submited = st.form_submit_button("Submit")
         clear_submited = st.form_submit_button("Clear results")
 

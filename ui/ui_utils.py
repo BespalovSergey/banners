@@ -13,7 +13,7 @@ from tools.replicate_image_generation_tool import ReplicateImageGenerationTool
 DALLE_GENERATOR = "Dalle"
 REPLICATE_GENERATOR = "Replicate"
 
-IMAGE_GENERATORS = (DALLE_GENERATOR, REPLICATE_GENERATOR)
+IMAGE_GENERATORS = (REPLICATE_GENERATOR, DALLE_GENERATOR)
 
 
 def init_image_generator(
