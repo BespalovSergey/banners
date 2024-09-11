@@ -22,6 +22,18 @@ FORCED_CACHE_BLACKLIST.append("*//api.openai.com/v1/images/edits*")
 configure_logging(verbose=True)
 load_dotenv()
 
+# init sidebar width
+st.markdown(
+    """
+    <style>
+    [data-testid="stSidebar"][aria-expanded="true"]{
+    min-width: 25%;
+    max-width: 25%;
+    }
+    """,
+    unsafe_allow_html=True,
+)
+
 
 def main():
     generator_key = "ui_banner_generator_with_text"
@@ -45,7 +57,7 @@ def main():
             image_generator_name = st.selectbox(image_generator_label, IMAGE_GENERATORS)
             is_enable_cache = st.toggle("Enable motleycache (does not work with Replicate)")
 
-        col1, col2 = st.columns([0.27, 0.73])
+        col1, col2 = st.columns((0.4, 0.6))
         with col1:
             submited = st.form_submit_button("Submit")
         with col2:
