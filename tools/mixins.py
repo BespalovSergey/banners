@@ -1,7 +1,7 @@
 from typing import Callable, Any
 from threading import Event
 from queue import Queue
-from viewers import StreamLitViewer, StreamLiteItemView, StreamLitItemFormView
+from viewers import StreamLitViewer, SpinnerStreamLitItemView, StreamLiteItemView, StreamLitItemFormView
 from exceptions import RunStopException
 
 
@@ -9,6 +9,8 @@ IMAGE_GENERATION_REMARKS_WIDGET_KEY = "image_generation_remark"
 
 
 class ViewDecoratorToolMixin:
+
+    preloader_text = ""
 
     def __init__(self, *args, **kwargs):
         self.stop_event = None
@@ -25,7 +27,7 @@ class ViewDecoratorToolMixin:
             self.check_stopping(except_message_template.format("before tool run"))
 
             self.before_run(*args, **kwargs)
-            results = f(*args, config=config, **kwargs)
+            results = self.execute_tool(f, *args, config=config, **kwargs)
             self.check_stopping(except_message_template.format("after tool run"))
 
             results = self.program_check_tool_results(results)
@@ -34,6 +36,12 @@ class ViewDecoratorToolMixin:
             return results
 
         return wrapper
+
+    def execute_tool(self, f: Callable, *args, **kwargs) -> Any:
+        if isinstance(self.viewer, StreamLitViewer):
+            preloader_text = self.preloader_text or "Executing {} tool".format(self.name)
+            self.viewer.view(SpinnerStreamLitItemView(text=preloader_text), to_history=False)
+        return f(*args, **kwargs)
 
     def check_stopping(self, exception_message: str):
         if isinstance(self.stop_event, Event):
@@ -75,6 +83,8 @@ class ViewDecoratorImageGenerationMixin(ViewDecoratorRemarksMixin):
         "It is necessary to regenerate the images taking into account the following remarks"
     )
     remarks_title = "Remarks for image generation:"
+
+    preloader_text = "Generation image ..."
 
     def human_check_results(self, results: Any) -> Any:
         if self.remark_queue is None or not isinstance(self.viewer, StreamLitViewer):

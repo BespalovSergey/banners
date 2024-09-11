@@ -51,6 +51,16 @@ class StreamLiteItemView:
         return self.__data
 
 
+class SpinnerStreamLitItemView:
+
+    def __init__(self, text: str):
+        self.__text = text
+
+    @property
+    def text(self):
+        return self.__text
+
+
 class StreamLitItemFormView:
     def __init__(self, form_key: str, items: StreamLiteItemView):
         self.form_key = form_key
@@ -80,17 +90,30 @@ def streamlit_render_form(form_item: StreamLitItemFormView):
 
 
 def streamlit_queue_render(q: Queue, exit_value: Any = None):
+    is_wait_view_data = True
+    view_data = None
     while True:
-        view_data = q.get()
+        if is_wait_view_data:
+            view_data = q.get()
+        else:
+            is_wait_view_data = True
 
         if view_data == exit_value:
             q.task_done()
             break
 
-        if not isinstance(view_data, StreamLiteItemView):
+        if not isinstance(view_data, (StreamLiteItemView, SpinnerStreamLitItemView)):
+            q.task_done()
             continue
-        streamlit_render(view_data)
-        q.task_done()
+
+        if isinstance(view_data, SpinnerStreamLitItemView):
+            with st.spinner(view_data.text):
+                q.task_done()
+                view_data = q.get()
+                is_wait_view_data = False
+        elif isinstance(view_data, StreamLiteItemView):
+            streamlit_render(view_data)
+            q.task_done()
 
 
 class StreamLitViewer(BaseViewer):

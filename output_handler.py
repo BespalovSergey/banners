@@ -6,7 +6,7 @@ from motleycrew.agents import MotleyOutputHandler
 from motleycrew.tools.html_render_tool import HTMLRenderer
 
 from checkers import BaseChecker
-from viewers import BaseViewer, StreamLitItemQueueViewer, StreamLiteItemView
+from viewers import BaseViewer, StreamLitItemQueueViewer, StreamLiteItemView, SpinnerStreamLitItemView
 
 from selenium import webdriver
 from motleycrew.common import logger
@@ -149,10 +149,7 @@ class HtmlRenderOutputHandler(MotleyOutputHandler):
             raise InvalidOutput(msg)
 
         if isinstance(self.viewer, StreamLitItemQueueViewer):
-            view_data = {
-                "text": ("Rendering image ...",)
-            }
-            self.viewer.view(StreamLiteItemView(view_data))
+            self.viewer.view(SpinnerStreamLitItemView("Rendering image ..."))
         output = self.renderer.render_image(output)
         for checker in self.checkers:
             checker.check(output)
