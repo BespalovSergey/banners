@@ -1,18 +1,40 @@
-from typing import Tuple, List
+from typing import Tuple, List, Optional, Union
+from pathlib import Path
 from datetime import datetime
+import asyncio
 
 from motleycrew.common.exceptions import InvalidOutput
 from motleycrew.agents import MotleyOutputHandler
-from motleycrew.tools.html_render_tool import HTMLRenderer
+from playwright.async_api import async_playwright
+
 
 from checkers import BaseChecker
-from viewers import BaseViewer, StreamLitItemQueueViewer, StreamLiteItemView, SpinnerStreamLitItemView
+from viewers import (
+    BaseViewer,
+    StreamLitItemQueueViewer,
+    StreamLiteItemView,
+    SpinnerStreamLitItemView,
+)
 
-from selenium import webdriver
 from motleycrew.common import logger
 
 
-class BannerHtmlRenderer(HTMLRenderer):
+class BannerHtmlRenderer():
+
+    def __init__(
+        self, work_dir: str, headless: bool = True, window_size: Optional[Tuple[int, int]] = None
+    ):
+
+        self.work_dir = Path(work_dir).resolve()
+        self.html_dir = self.work_dir / "html"
+        self.images_dir = self.work_dir / "images"
+        self.headless = headless
+        self.window_size = window_size
+        if self.window_size:
+            self.__view_size = {"width": window_size[0], "height": window_size[0]}
+        else:
+            self.__view_size = None
+        self.__changed_event_loop = False
 
     def render_image(self, html: str, file_name: str | None = None):
         """Create image with png extension from html code
@@ -32,38 +54,56 @@ class BannerHtmlRenderer(HTMLRenderer):
             f.write(html)
         logger.info("Saved the HTML code to {}".format(html_path))
 
-        browser = webdriver.Chrome(options=self.options, service=self.service)
+        logger.info("Taking screenshot")
+
         try:
-            if self.window_size:
-                logger.info("Setting window size to {}".format(self.window_size))
-                browser.set_window_size(*self.window_size)
-
+            loop = self.__find_async_loop()
             url = "file://{}".format(html_path)
-            browser.get(url)
-
-            logger.info("Taking screenshot")
-            is_created_img = browser.get_screenshot_as_file(image_path)
-        finally:
-            browser.close()
-            browser.quit()
-
-        if not is_created_img:
+            loop.run_until_complete(self.__render_image(url, image_path))
+        except Exception as e:
             logger.error("Failed to render image from HTML code {}".format(image_path))
-            return "Failed to render image from HTML code"
+            raise e
 
         logger.info("Saved the rendered HTML screenshot to {}".format(image_path))
 
         return image_path
-    
+
+    def __find_async_loop(self):
+        if not self.__changed_event_loop:
+            loop = asyncio.ProactorEventLoop()
+            asyncio.set_event_loop(loop)
+            self.__changed_event_loop = True
+            return loop
+
+        try:
+            loop = asyncio.get_running_loop()
+        except Exception:
+            loop = asyncio.get_event_loop()
+
+        return loop
+
+    async def __render_image(self, url: str, image_path):
+
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=self.headless)
+            page = await browser.new_page()
+
+            if self.__view_size:
+                await page.set_viewport_size(self.__view_size)
+
+            await page.goto(url)
+            await page.screenshot(path=image_path, full_page=True)
+            await browser.close()
+
     def prepare_html(self, html: str) -> str:
         """Clears the html code from unnecessary characters at the beginning and end of the code
 
-                Args:
-                    html (str): html code
+        Args:
+            html (str): html code
 
-                Returns:
-                    html (str): html code
-                """
+        Returns:
+            html (str): html code
+        """
         if not html:
             return html
 
@@ -74,9 +114,9 @@ class BannerHtmlRenderer(HTMLRenderer):
 
         close_tag_idx = html.rfind(">")
         if open_tag_idx > -1:
-            html = html[:close_tag_idx + 1]
+            html = html[: close_tag_idx + 1]
 
-        for o, n in ((r"\'", r"'"), (r'\"', r'"')):
+        for o, n in ((r"\'", r"'"), (r"\"", r'"')):
             html = html.replace(o, n)
 
         return html
@@ -117,19 +157,18 @@ class HtmlRenderOutputHandler(MotleyOutputHandler):
         super().__init__(max_iterations=max_iterations)
         self.renderer = BannerHtmlRenderer(*args, **kwargs)
         self.checkers = checkers or []
-        self.slogan = slogan,
+        self.slogan = (slogan,)
         self.viewer = viewer
         self.iteration = 0
 
     def handle_output(self, output: str):
         # check html tags
         self.iteration += 1
-        if isinstance(self.viewer, StreamLitItemQueueViewer):
-            view_data = {
-                "subheader": ("Html output handler iteration: {}".format(self.iteration),),
-                "code": (output,)
-            }
-            self.viewer.view(StreamLiteItemView(view_data))
+        view_data = {
+            "subheader": ("Html output handler iteration: {}".format(self.iteration),),
+            "code": (output,),
+        }
+        self.streamlit_view(StreamLiteItemView(view_data))
 
         checked_tags = ("html", "head")
         is_html = False
@@ -141,17 +180,24 @@ class HtmlRenderOutputHandler(MotleyOutputHandler):
                 break
         if not is_html:
             msg = "Html tags not found"
-            if isinstance(self.viewer, StreamLitItemQueueViewer):
-                view_data = {
-                    "text": ("Invalid output: {}".format(msg),)
-                }
-                self.viewer.view(StreamLiteItemView(view_data))
+            view_data = {"text": ("Invalid output: {}".format(msg),)}
+            self.streamlit_view(StreamLiteItemView(view_data))
             raise InvalidOutput(msg)
 
-        if isinstance(self.viewer, StreamLitItemQueueViewer):
-            self.viewer.view(SpinnerStreamLitItemView("Rendering image ..."))
-        output = self.renderer.render_image(output)
+        self.streamlit_view(SpinnerStreamLitItemView("Rendering image ..."))
+
+        try:
+            output = self.renderer.render_image(output)
+        except Exception as e:
+            view_data = {"error": ("Render image error: {}".format(str(e)),)}
+            self.streamlit_view(StreamLiteItemView(view_data))
+            return {"checked_output": "Render image error"}
+
         for checker in self.checkers:
             checker.check(output)
 
         return {"checked_output": output}
+
+    def streamlit_view(self, item_view: Union[StreamLiteItemView, SpinnerStreamLitItemView]):
+        if isinstance(self.viewer, StreamLitItemQueueViewer):
+            self.viewer.view(item_view)
