@@ -79,7 +79,7 @@ class BannerHtmlRenderer():
         try:
             loop = asyncio.get_running_loop()
         except Exception:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.new_event_loop()
 
         return loop
 
