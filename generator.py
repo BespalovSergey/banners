@@ -16,6 +16,8 @@ from output_handler import HtmlRenderOutputHandler
 
 class BaseBannerGenerator:
 
+    add_slogan_to_image_prompt = ", dont add slogan on image"
+
     def __init__(
         self,
         image_description: str,
@@ -65,7 +67,7 @@ class BaseBannerGenerator:
             crew=self.crew,
             name="Generate banner",
             description=f"""Generate one image as image which shows a {self.image_description}, 
-                                               based on the slogan '{self.slogan}'.
+                                               based on the slogan '{self.slogan}' {self.add_slogan_to_image_prompt}.
                                                Return image path. """,
             agent=self.advertising_agent,
         )
@@ -136,6 +138,7 @@ class BannerGenerator(BaseBannerGenerator):
         text_shadow: int | None = None,
         text_background: bool = False,
         max_review_iterations: int = 5,
+        image_generate_tool: MotleyTool = None,
     ):
 
         super().__init__(
@@ -145,6 +148,7 @@ class BannerGenerator(BaseBannerGenerator):
             html_render_checkers,
             image_size,
             max_review_iterations,
+            image_generate_tool
         )
         self.font = font
         self.text_shadow = text_shadow
@@ -186,6 +190,7 @@ class BannerGenerator(BaseBannerGenerator):
 
 
 class BannerGeneratorWithText(BaseBannerGenerator):
+    add_slogan_to_image_prompt = ",add slogan on image"
 
     def __init__(
         self,
