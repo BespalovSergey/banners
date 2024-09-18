@@ -12,7 +12,7 @@ import streamlit as st
 from checkers import StreamLitHumanChecker, REMARKS_WIDGET_KEY
 from tools.mixins import IMAGE_GENERATION_REMARKS_WIDGET_KEY
 from generator_with_ui import UiBannerGenerator
-from ui_utils import IMAGE_GENERATORS, init_image_generator, find_remarks, navigation_menu
+from ui_utils import IMAGE_GENERATORS, init_image_generator, find_remarks, navigation_menu, stop_other_generators
 from viewers import StreamLitItemQueueViewer, streamlit_queue_render
 
 from motleycache.http_cache import FORCED_CACHE_BLACKLIST
@@ -38,7 +38,9 @@ st.markdown(
 def main():
     navigation_menu()
 
-    generator_key = "ui_banner_generator"
+    generator_key = UiBannerGenerator.ui_state_name
+    stop_other_generators(generator_key)
+
     st.header("Banner generation")
     generator = st.session_state.get(generator_key)
 
