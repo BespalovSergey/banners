@@ -41,7 +41,7 @@ class UiBannerGeneratorMixin():
             if hasattr(tool, "set_stop_event"):
                 tool.set_stop_event(self._stop_event)
 
-    def run(self):
+    def generate(self):
         if self._is_run:
             raise GeneratorIsRunException
 
@@ -52,7 +52,7 @@ class UiBannerGeneratorMixin():
         self._stop_event.clear()
 
         try:
-            result = super().run()
+            result = self.run()
         except RunStopException as e:
             pass
         except Exception as e:
