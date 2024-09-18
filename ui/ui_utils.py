@@ -63,3 +63,11 @@ def find_remarks(*args) -> Tuple[Union[str | None], Union[str | None]]:
         if remark is not None:
             return remark, widget_key
     return None, None
+
+
+def navigation_menu():
+    """
+    Add navigation
+    """
+    st.sidebar.page_link("ui_main.py", label="Banner generation")
+    st.sidebar.page_link("pages/generation_with_text.py", label="Banner generation with text")

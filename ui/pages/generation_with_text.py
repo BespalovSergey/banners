@@ -11,8 +11,8 @@ import streamlit as st
 
 from checkers import StreamLitHumanChecker, REMARKS_WIDGET_KEY
 from tools.mixins import IMAGE_GENERATION_REMARKS_WIDGET_KEY
-from generator_with_ui import UiBannerGenerator
-from ui_utils import IMAGE_GENERATORS, init_image_generator, find_remarks, navigation_menu
+from ui.generator_with_ui import UiBannerGeneratorWithText
+from ui.ui_utils import IMAGE_GENERATORS, init_image_generator, find_remarks, navigation_menu
 from viewers import StreamLitItemQueueViewer, streamlit_queue_render
 
 from motleycache.http_cache import FORCED_CACHE_BLACKLIST
@@ -38,17 +38,19 @@ st.markdown(
 def main():
     navigation_menu()
 
-    generator_key = "ui_banner_generator"
-    st.header("Banner generation")
+    generator_key = "ui_banner_generator_with_text"
+    st.header("Banner generation with text")
     generator = st.session_state.get(generator_key)
 
     image_generator_label = "Image generator"
     image_description_label = "Image description"
+    text_description_label = "Text description"
     slogan_label = "Slogan"
     images_dir_label = "Image dir"
 
     with st.sidebar.form("form"):
         image_description = st.text_area(image_description_label, "Sun day", height=200)
+        text_description = st.text_area(text_description_label, "Large text")
         slogan = st.text_area(slogan_label, "Good day")
         max_review_iterations = st.number_input("Output handler iterations", 1, 100, 5)
         image_size = (1024, 1024)
@@ -78,6 +80,7 @@ def main():
         is_valid_fields = True
         for text, label in (
             (image_description, image_description_label),
+            (text_description, text_description_label),
             (slogan, slogan_label),
             (images_dir, images_dir_label),
         ):
@@ -95,8 +98,9 @@ def main():
 
         image_generate_tool = init_image_generator(image_generator_name, images_dir, image_size, is_enable_cache)
 
-        generator = UiBannerGenerator(
+        generator = UiBannerGeneratorWithText(
             image_description=image_description,
+            text_description=text_description,
             images_dir=images_dir,
             slogan=slogan,
             max_review_iterations=max_review_iterations,
