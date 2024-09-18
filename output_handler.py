@@ -2,6 +2,7 @@ from typing import Tuple, List, Optional, Union
 from pathlib import Path
 from datetime import datetime
 import asyncio
+import sys
 
 from motleycrew.common.exceptions import InvalidOutput
 from motleycrew.agents import MotleyOutputHandler
@@ -69,7 +70,7 @@ class BannerHtmlRenderer():
         return image_path
 
     def __find_async_loop(self):
-        if not self.__changed_event_loop:
+        if not self.__changed_event_loop and sys.platform == "win32":
             loop = asyncio.ProactorEventLoop()
             asyncio.set_event_loop(loop)
             self.__changed_event_loop = True
