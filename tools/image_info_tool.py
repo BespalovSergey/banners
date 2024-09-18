@@ -1,5 +1,5 @@
 import os
-from typing import Tuple
+from typing import Tuple, Any
 
 import cv2
 import numpy as np
@@ -10,6 +10,8 @@ from langchain_core.pydantic_v1 import BaseModel, Field
 
 from motleycrew.tools import MotleyTool
 from utils import get_points_density
+from .mixins import ViewDecoratorToolMixin
+from viewers import StreamLitViewer, StreamLiteItemView, BaseViewer
 
 
 class BannerImageParser:
@@ -71,14 +73,31 @@ class BannerImageParser:
         return return_data
 
 
-class BannerImageParserTool(MotleyTool):
+class BannerImageParserTool(MotleyTool, ViewDecoratorToolMixin):
 
-    def __init__(self):
+    def __init__(self, viewer: BaseViewer = None):
         """Tool for banner parse image
         """
+        self.viewer = viewer
         renderer = BannerImageParser(num_clusters=2)
         langchain_tool = create_render_tool(renderer)
         super().__init__(langchain_tool)
+        ViewDecoratorToolMixin.__init__(self)
+
+    def before_run(self, *args, **kwargs):
+        if self.viewer is None:
+            return
+
+        if isinstance(self.viewer, StreamLitViewer):
+            view_data = {"subheader": ("Get image parameters",), "markdown": (args[0],)}
+            self.viewer.view(StreamLiteItemView(view_data), to_history=True)
+
+    def view_results(self, results: Any, *args, **kwargs):
+        if self.viewer is None:
+            return
+        if isinstance(self.viewer, StreamLitViewer):
+            view_data = {"text": (results,)}
+            self.viewer.view(StreamLiteItemView(view_data), to_history=True)
 
 
 class BannerImageParserToolInput(BaseModel):
