@@ -45,24 +45,31 @@ class TesseractTextDetector(TextDetector):
 
 class KerasOcrTextDetector(TextDetector):
 
-  def __init__(self):
-    self.pipeline = Pipeline()
+    __instance = None
 
-  def detect_text(self, image_filename: str) -> Sequence[TextBox]:
-      prediction_groups = self.pipeline.recognize([image_filename])
+    def __new__(cls, *args, **kwargs):
+        if cls.__instance is None:
+            cls.__instance = super(KerasOcrTextDetector, cls).__new__(cls, *args, **kwargs)
+        return cls.__instance
 
-      boxes = []
-      for group in prediction_groups:
-          for text, coords  in group:
-              x_min = int(np.min(coords[:, 0]))
-              x_max = int(np.max(coords[:, 0]))
-              w = x_max - x_min
+    def __init__(self):
+        self.pipeline = Pipeline()
 
-              y_min = int(np.min(coords[:, 1]))
-              y_max = int(np.max(coords[:, 1]))
-              h = y_max - y_min
+    def detect_text(self, image_filename: str) -> Sequence[TextBox]:
+        prediction_groups = self.pipeline.recognize([image_filename])
 
-              box = TextBox(x_min, y_min, h, w, text=text)
-              boxes.append(box)
+        boxes = []
+        for group in prediction_groups:
+            for text, coords  in group:
+                x_min = int(np.min(coords[:, 0]))
+                x_max = int(np.max(coords[:, 0]))
+                w = x_max - x_min
 
-      return boxes
+                y_min = int(np.min(coords[:, 1]))
+                y_max = int(np.max(coords[:, 1]))
+                h = y_max - y_min
+
+                box = TextBox(x_min, y_min, h, w, text=text)
+                boxes.append(box)
+
+        return boxes
