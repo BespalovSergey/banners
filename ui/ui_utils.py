@@ -72,6 +72,7 @@ def navigation_menu():
     """
     st.sidebar.page_link("ui_main.py", label="Banner generation")
     st.sidebar.page_link("pages/generation_with_text.py", label="Banner generation with text")
+    st.sidebar.page_link("pages/painting_image.py", label="Painting image")
 
 
 def stop_other_generators(running_generator_key: str):
