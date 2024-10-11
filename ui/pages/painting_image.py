@@ -57,8 +57,8 @@ def main():
         product_size_items.append("{} * width".format(val))
 
     with st.sidebar.form("form"):
-        prompt = st.text_area(prompt_label, "Test prompt", height=200)
-        negative_prompt = st.text_area(negative_prompt_label, "Test negative prompt", height=200)
+        prompt = st.text_area(prompt_label, "", height=200)
+        negative_prompt = st.text_area(negative_prompt_label, "", height=200)
         file_image = st.file_uploader(file_upload_label, type=['png', 'jpg'])
         with st.expander("Image generation settings"):
             num_image = st.number_input(num_image_label, 1, 4, 1, 1)
