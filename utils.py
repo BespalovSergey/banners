@@ -1,6 +1,7 @@
 import os
 from queue import Queue
 from typing import List, Tuple, Union
+from datetime import datetime
 
 import cv2
 import numpy as np
@@ -116,3 +117,9 @@ def clear_queue(q: Queue):
     while not q.empty():
         q.get()
         q.task_done()
+
+
+def get_current_time_file_name(ext: str, postfix_name: str = "", dt_format: str = "%d.%m.%Y_%H.%M.%S") -> str:
+    name_template = "{}_{}.{}" if postfix_name else "{}{}.{}"
+    file_name = name_template.format(datetime.now().strftime(dt_format), postfix_name, ext)
+    return file_name
