@@ -79,6 +79,10 @@ class ViewDecoratorRemarksMixin(ViewDecoratorToolMixin):
 
 class ViewDecoratorImageGenerationMixin(ViewDecoratorRemarksMixin):
 
+    def __init__(self, is_text_editor: bool = False):
+        self.is_text_editor = is_text_editor
+        ViewDecoratorRemarksMixin.__init__(self)
+
     preface_remark = (
         "It is necessary to regenerate the images taking into account the following remarks"
     )
@@ -113,3 +117,22 @@ class ViewDecoratorImageGenerationMixin(ViewDecoratorRemarksMixin):
 
         results = "{}: {}".format(self.preface_remark, remarks)
         return results
+
+    def view_image(self, img_path: str, *args):
+        if isinstance(self.viewer, StreamLitViewer):
+            if self.is_text_editor:
+                view_data = {"image_text_editor": (img_path,)}
+            else:
+                view_data = {"image": (img_path, args[0])}
+
+            self.viewer.view(StreamLiteItemView(view_data), to_history=True)
+        else:
+            self.viewer.view(img_path)
+
+    def view_results(self, results: Any, *args, **kwargs):
+        if self.viewer is None:
+            return
+        for img_path in results:
+            if img_path.startswith("http"):
+                continue
+            self.view_image(img_path, *args)

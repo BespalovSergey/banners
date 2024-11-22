@@ -119,6 +119,7 @@ class ReplicateImagePaintingTool(MotleyTool, ViewDecoratorImageGenerationMixin):
         images_directory: str,
         model_name: str = None,
         viewer: BaseViewer = None,
+        is_text_editor: bool = True,
         **kwargs,
     ):
         """
@@ -146,7 +147,7 @@ class ReplicateImagePaintingTool(MotleyTool, ViewDecoratorImageGenerationMixin):
         langchain_tool = create_replicate_image_painter_langchain_tool(self.image_painter)
 
         super().__init__(langchain_tool)
-        ViewDecoratorImageGenerationMixin.__init__(self)
+        ViewDecoratorImageGenerationMixin.__init__(self, is_text_editor)
 
     def before_run(self, *args, **kwargs):
         if self.viewer is None:
@@ -161,19 +162,6 @@ class ReplicateImagePaintingTool(MotleyTool, ViewDecoratorImageGenerationMixin):
 
             view_data = {"subheader": ("Generated image with description",), "markdown": (args[0],)}
             self.viewer.view(StreamLiteItemView(view_data), to_history=True)
-
-    def view_results(self, results: Any, *args, **kwargs):
-        if self.viewer is None:
-            return
-        for i, img_path in enumerate(results):
-            if img_path.startswith("http"):
-                continue
-
-            if isinstance(self.viewer, StreamLitViewer):
-                view_data = {"text": ("Image {}".format(i + 1),), "image": (img_path, args[0])}
-                self.viewer.view(StreamLiteItemView(view_data), to_history=True)
-            else:
-                self.viewer.view(img_path)
 
 
 def create_replicate_image_painter_langchain_tool(image_painter: ReplicateImagePainter):
