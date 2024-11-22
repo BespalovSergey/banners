@@ -6,6 +6,7 @@ import cv2
 import streamlit as st
 
 from utils import read_image
+from ui.components import components as _components
 
 
 class BaseViewer(ABC):
@@ -73,7 +74,7 @@ def streamlit_render(view_data: StreamLiteItemView):
             streamlit_render_form(args)
             continue
 
-        func = getattr(st, func_name, None)
+        func = getattr(st, func_name, _components.get(func_name, None))
 
         if func is None:
             continue
