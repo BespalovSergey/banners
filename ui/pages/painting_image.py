@@ -56,6 +56,7 @@ def main():
     images_dir_label = "Image dir"
     guidance_scale_label = "Guidance scale"
     num_inference_steps_label = "Num inference steps"
+    is_image_text_editor_label = "View with text editor"
 
     product_size_items = ["Original"]
     for val in (0.6, 0.5, 0.4, 0.3, 0.2):
@@ -65,6 +66,7 @@ def main():
         prompt = st.text_area(prompt_label, "", height=200)
         negative_prompt = st.text_area(negative_prompt_label, "", height=200)
         file_image = st.file_uploader(file_upload_label, type=['png', 'jpg'])
+        is_image_text_editor = st.toggle(is_image_text_editor_label, True)
         with st.expander("Image generation settings"):
             num_image = st.number_input(num_image_label, 1, 4, 1, 1)
             product_size = st.selectbox(product_size_label, product_size_items, index=2)
@@ -115,7 +117,11 @@ def main():
         if seed > 0:
             painter_kwargs["manual_seed"] = seed
 
-        painter = ReplicateImagePaintingTool(images_directory=images_dir, original_image=file_image, **painter_kwargs)
+        painter = ReplicateImagePaintingTool(
+            images_directory=images_dir,
+            original_image=file_image,
+            is_text_editor=is_image_text_editor,
+            **painter_kwargs)
         painter.set_viewer(StreamLitItemQueueViewer(render_queue))
 
         t = Thread(target=run_paint, args=(painter, render_queue, prompt))

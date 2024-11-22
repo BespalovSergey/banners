@@ -48,11 +48,13 @@ def main():
     image_description_label = "Image description"
     slogan_label = "Slogan"
     images_dir_label = "Image dir"
+    is_image_text_editor_label = "View with text editor"
 
     with st.sidebar.form("form"):
         image_description = st.text_area(image_description_label, "Sun day", height=200)
         slogan = st.text_area(slogan_label, "Good day")
         max_review_iterations = st.number_input("Output handler iterations", 1, 100, 5)
+        is_image_text_editor = st.toggle(is_image_text_editor_label, True)
         image_size = (1024, 1024)
         with st.expander("Image generation settings"):
             images_dir = st.text_input(images_dir_label, "banner_images")
@@ -95,7 +97,13 @@ def main():
             os.makedirs(images_dir, exist_ok=True)
         images_dir = os.path.abspath(images_dir)
 
-        image_generate_tool = init_image_generator(image_generator_name, images_dir, image_size, is_enable_cache)
+        image_generate_tool = init_image_generator(
+            image_generator_name,
+            images_dir,
+            image_size,
+            is_enable_cache,
+            is_image_text_editor,
+        )
 
         generator = UiBannerGenerator(
             image_description=image_description,
