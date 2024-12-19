@@ -6,7 +6,7 @@ import time
 from utils import show_image
 from motleycrew.common.exceptions import InvalidOutput
 from tools.image_description_tool import GptImageProcessor
-from viewers import StreamLiteItemView, StreamLitItemQueueViewer, StreamLitItemFormView
+from viewers import StreamLitItemView, StreamLitItemQueueViewer, StreamLitItemFormView
 
 
 REMARKS_WIDGET_KEY = "remarks"
@@ -97,7 +97,7 @@ class StreamLitHumanChecker(BaseChecker):
             "text": ("Image path: {}".format(image_path),),
             "image": (image_path, "Checked image"),
         }
-        self.viewer.view(StreamLiteItemView(start_check_view_data), to_history=True)
+        self.viewer.view(StreamLitItemView(start_check_view_data), to_history=True)
 
         form_view_items = {
             "text_area": {"label": "Remarks for html generation", "key": REMARKS_WIDGET_KEY},
@@ -106,11 +106,11 @@ class StreamLitHumanChecker(BaseChecker):
 
         form_item_view = StreamLitItemFormView(
             form_key="check_form_{}".format(self.iteration),
-            items=StreamLiteItemView(form_view_items),
+            items=StreamLitItemView(form_view_items),
         )
 
         form_view_data = {"form": form_item_view}
-        self.viewer.view(StreamLiteItemView(form_view_data), to_history=False)
+        self.viewer.view(StreamLitItemView(form_view_data), to_history=False)
 
         if self.remarks_queue is None:
             return True
@@ -120,7 +120,7 @@ class StreamLitHumanChecker(BaseChecker):
             remarks_title = "Remarks for html generation:"
             remarks_view_data = {"text": (remarks_title,), "markdown": (remarks,)}
 
-            self.viewer.view(StreamLiteItemView(remarks_view_data), to_history=True)
+            self.viewer.view(StreamLitItemView(remarks_view_data), to_history=True)
 
             raise InvalidOutput("{}: {}".format(remarks_title, remarks))
 

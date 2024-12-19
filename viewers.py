@@ -42,7 +42,7 @@ class CliImageViewer(BaseViewer):
 
 # Streamlit classes and functions
 
-class StreamLiteItemView:
+class StreamLitItemView:
 
     def __init__(self, data: dict):
         self.__data = data
@@ -63,12 +63,13 @@ class SpinnerStreamLitItemView:
 
 
 class StreamLitItemFormView:
-    def __init__(self, form_key: str, items: StreamLiteItemView):
+    def __init__(self, form_key: str, items: StreamLitItemView):
         self.form_key = form_key
         self.items = items
 
 
-def streamlit_render(view_data: StreamLiteItemView):
+def streamlit_render(view_data: StreamLitItemView):
+
     for func_name, args in view_data.data.items():
         if func_name == "form":
             streamlit_render_form(args)
@@ -103,7 +104,7 @@ def streamlit_queue_render(q: Queue, exit_value: Any = None):
             q.task_done()
             break
 
-        if not isinstance(view_data, (StreamLiteItemView, SpinnerStreamLitItemView)):
+        if not isinstance(view_data, (StreamLitItemView, SpinnerStreamLitItemView)):
             q.task_done()
             continue
 
@@ -112,7 +113,7 @@ def streamlit_queue_render(q: Queue, exit_value: Any = None):
                 q.task_done()
                 view_data = q.get()
                 is_wait_view_data = False
-        elif isinstance(view_data, StreamLiteItemView):
+        elif isinstance(view_data, StreamLitItemView):
             streamlit_render(view_data)
             q.task_done()
 
@@ -125,7 +126,7 @@ class StreamLitViewer(BaseViewer):
     def view(self, *args, **kwargs):
         pass
 
-    def to_history(self, history_item: StreamLiteItemView):
+    def to_history(self, history_item: StreamLitItemView):
         if self.history_storage is None:
             return
         self.history_storage.save_history(history_item)
@@ -133,7 +134,7 @@ class StreamLitViewer(BaseViewer):
 
 class StreamLitItemViewer(StreamLitViewer):
 
-    def view(self, view_data: StreamLiteItemView, *args, to_history: bool = True,  **kwargs):
+    def view(self, view_data: StreamLitItemView, *args, to_history: bool = True,  **kwargs):
         if to_history:
             self.to_history(view_data)
         streamlit_render(view_data)
@@ -145,7 +146,7 @@ class StreamLitItemQueueViewer(StreamLitViewer):
         self.view_queue = view_queue
         super().__init__(history_storage=storage)
 
-    def view(self, view_data: StreamLiteItemView, *args, to_history: bool = True,  **kwargs):
+    def view(self, view_data: StreamLitItemView, *args, to_history: bool = True,  **kwargs):
         if to_history:
             self.to_history(view_data)
         self.view_queue.put(view_data)

@@ -15,7 +15,7 @@ from clear_image.inpainter import DalleInpainter, Inpainter
 from clear_image.text_detector import KerasOcrTextDetector, TextBox
 from utils import get_points_density, combining_mask_boxes, read_image, bbox_w_h_to_x_max_y_max
 from .mixins import ViewDecoratorToolMixin
-from viewers import BaseViewer, StreamLitItemQueueViewer, StreamLiteItemView
+from viewers import BaseViewer, StreamLitItemQueueViewer, StreamLitItemView
 
 
 class TextRemover:
@@ -115,7 +115,7 @@ class RemoveTextTool(MotleyTool, ViewDecoratorToolMixin):
             "subheader": ("Removing text from image",),
             "text": ("Image path: {}".format(os.path.abspath(args[0])),),
         }
-        self.viewer.view(StreamLiteItemView(view_data), to_history=True)
+        self.viewer.view(StreamLitItemView(view_data), to_history=True)
 
     def view_results(self, results: Any, *args, **kwargs):
         if self.viewer is None:
@@ -132,7 +132,7 @@ class RemoveTextTool(MotleyTool, ViewDecoratorToolMixin):
 
         caption = "Text bound boxes" if self.remover.bboxes else "Text Area"
         view_data = {"image": (img, caption)}
-        self.viewer.view(StreamLiteItemView(view_data), to_history=True)
+        self.viewer.view(StreamLitItemView(view_data), to_history=True)
 
 
 class RemoveTextToolInput(BaseModel):

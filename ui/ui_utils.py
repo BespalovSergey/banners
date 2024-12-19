@@ -8,6 +8,7 @@ from motleycache.caching import check_is_caching
 
 from tools.dalle_image_generator_tool import DalleImageGeneratorTool
 from tools.replicate_image_generation_tool import ReplicateImageGenerationTool
+from tools.generate_post_tools.text_generation_tool import PostTextGeneratorTool
 from ui.generator_with_ui import UiBannerGeneratorWithText, UiBannerGenerator
 
 
@@ -76,11 +77,12 @@ def navigation_menu():
     st.sidebar.page_link("ui_main.py", label="Banner generation")
     st.sidebar.page_link("pages/generation_with_text.py", label="Banner generation with text")
     st.sidebar.page_link("pages/painting_image.py", label="Painting image")
+    st.sidebar.page_link("pages/generate_post.py", label="Post text generation")
 
 
 def stop_other_generators(running_generator_key: str):
     """Stopping other running generators"""
-    for generator_key in (UiBannerGeneratorWithText.ui_state_name, UiBannerGenerator.ui_state_name):
+    for generator_key in (UiBannerGeneratorWithText.ui_state_name, UiBannerGenerator.ui_state_name, PostTextGeneratorTool.ui_state_name):
         if generator_key == running_generator_key:
             continue
 

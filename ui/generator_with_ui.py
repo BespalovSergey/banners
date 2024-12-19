@@ -6,7 +6,7 @@ from queue import Queue
 from motleycrew.tools import MotleyTool
 from generator import BannerGeneratorWithText, BannerGenerator
 from checkers import BaseChecker
-from viewers import StreamLitItemQueueViewer, StreamLiteItemView
+from viewers import StreamLitItemQueueViewer, StreamLitItemView, SpinnerStreamLitItemView
 from exceptions import RunStopException, GeneratorIsRunException
 from utils import clear_queue
 
@@ -57,7 +57,7 @@ class UiBannerGeneratorMixin():
             pass
         except Exception as e:
             view_data = {"subheader": ("Error:",), "code": (str(e),)}
-            self._render_queue.put(StreamLiteItemView(view_data))
+            self._render_queue.put(StreamLitItemView(view_data))
         finally:
             self._render_queue.put(None)
             self._remarks_queue.put(None)
@@ -73,7 +73,7 @@ class UiBannerGeneratorMixin():
     def is_run(self):
         return self._is_run
 
-    def save_history(self, item: StreamLiteItemView):
+    def save_history(self, item: StreamLitItemView):
         self._history.append(item)
 
     def get_history(self):

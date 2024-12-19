@@ -13,7 +13,7 @@ from checkers import BaseChecker
 from viewers import (
     BaseViewer,
     StreamLitItemQueueViewer,
-    StreamLiteItemView,
+    StreamLitItemView,
     SpinnerStreamLitItemView,
 )
 
@@ -169,7 +169,7 @@ class HtmlRenderOutputHandler(MotleyOutputHandler):
             "subheader": ("Html output handler iteration: {}".format(self.iteration),),
             "code": (output,),
         }
-        self.streamlit_view(StreamLiteItemView(view_data))
+        self.streamlit_view(StreamLitItemView(view_data))
 
         checked_tags = ("html", "head")
         is_html = False
@@ -182,7 +182,7 @@ class HtmlRenderOutputHandler(MotleyOutputHandler):
         if not is_html:
             msg = "Html tags not found"
             view_data = {"text": ("Invalid output: {}".format(msg),)}
-            self.streamlit_view(StreamLiteItemView(view_data))
+            self.streamlit_view(StreamLitItemView(view_data))
             raise InvalidOutput(msg)
 
         self.streamlit_view(SpinnerStreamLitItemView("Rendering image ..."))
@@ -191,7 +191,7 @@ class HtmlRenderOutputHandler(MotleyOutputHandler):
             output = self.renderer.render_image(output)
         except Exception as e:
             view_data = {"error": ("Render image error: {}".format(str(e)),)}
-            self.streamlit_view(StreamLiteItemView(view_data))
+            self.streamlit_view(StreamLitItemView(view_data))
             return {"checked_output": "Render image error"}
 
         for checker in self.checkers:
@@ -199,6 +199,6 @@ class HtmlRenderOutputHandler(MotleyOutputHandler):
 
         return {"checked_output": output}
 
-    def streamlit_view(self, item_view: Union[StreamLiteItemView, SpinnerStreamLitItemView]):
+    def streamlit_view(self, item_view: Union[StreamLitItemView, SpinnerStreamLitItemView]):
         if isinstance(self.viewer, StreamLitItemQueueViewer):
             self.viewer.view(item_view)

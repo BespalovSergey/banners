@@ -11,7 +11,7 @@ from langchain_core.pydantic_v1 import BaseModel, Field
 from motleycrew.tools import MotleyTool
 from utils import get_points_density
 from .mixins import ViewDecoratorToolMixin
-from viewers import StreamLitViewer, StreamLiteItemView, BaseViewer
+from viewers import StreamLitViewer, StreamLitItemView, BaseViewer
 
 
 class BannerImageParser:
@@ -90,14 +90,14 @@ class BannerImageParserTool(MotleyTool, ViewDecoratorToolMixin):
 
         if isinstance(self.viewer, StreamLitViewer):
             view_data = {"subheader": ("Get image parameters",), "markdown": (args[0],)}
-            self.viewer.view(StreamLiteItemView(view_data), to_history=True)
+            self.viewer.view(StreamLitItemView(view_data), to_history=True)
 
     def view_results(self, results: Any, *args, **kwargs):
         if self.viewer is None:
             return
         if isinstance(self.viewer, StreamLitViewer):
             view_data = {"text": (results,)}
-            self.viewer.view(StreamLiteItemView(view_data), to_history=True)
+            self.viewer.view(StreamLitItemView(view_data), to_history=True)
 
 
 class BannerImageParserToolInput(BaseModel):

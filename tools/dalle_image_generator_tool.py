@@ -3,7 +3,7 @@ from typing import Any
 from motleycrew.tools import DallEImageGeneratorTool
 from viewers import BaseViewer
 from .mixins import ViewDecoratorImageGenerationMixin
-from viewers import StreamLitViewer, StreamLiteItemView
+from viewers import StreamLitViewer, StreamLitItemView
 
 
 class DalleImageGeneratorTool(DallEImageGeneratorTool, ViewDecoratorImageGenerationMixin):
@@ -19,4 +19,4 @@ class DalleImageGeneratorTool(DallEImageGeneratorTool, ViewDecoratorImageGenerat
 
         if isinstance(self.viewer, StreamLitViewer):
             view_data = {"subheader": ("Generated image with description",), "markdown": (args[0],)}
-            self.viewer.view(StreamLiteItemView(view_data), to_history=True)
+            self.viewer.view(StreamLitItemView(view_data), to_history=True)

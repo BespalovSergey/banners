@@ -13,7 +13,7 @@ from motleycrew.tools.tool import MotleyTool
 from tools.outpainting_tools.base_painting import BaseImagePainter
 from tools.outpainting_tools.painting_utils import ModelBgRemover
 from tools.mixins import ViewDecoratorImageGenerationMixin
-from viewers import BaseViewer, StreamLitViewer, StreamLiteItemView
+from viewers import BaseViewer, StreamLitViewer, StreamLitItemView
 from utils import get_current_time_file_name
 
 
@@ -158,10 +158,10 @@ class ReplicateImagePaintingTool(MotleyTool, ViewDecoratorImageGenerationMixin):
                 "subheader": ("Object image",),
                 "image": (self.image_painter.no_bg_image_path,),
             }
-            self.viewer.view(StreamLiteItemView(view_data), to_history=True)
+            self.viewer.view(StreamLitItemView(view_data), to_history=True)
 
             view_data = {"subheader": ("Generated image with description",), "markdown": (args[0],)}
-            self.viewer.view(StreamLiteItemView(view_data), to_history=True)
+            self.viewer.view(StreamLitItemView(view_data), to_history=True)
 
 
 def create_replicate_image_painter_langchain_tool(image_painter: ReplicateImagePainter):
