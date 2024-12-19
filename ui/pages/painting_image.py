@@ -11,7 +11,7 @@ sys.path.append(os.path.abspath("."))
 import streamlit as st
 
 from tools.outpainting_tools import ReplicateImagePaintingTool
-from viewers import StreamLitItemQueueViewer, StreamLiteItemView, streamlit_queue_render
+from viewers import StreamLitItemQueueViewer, StreamLitItemView, streamlit_queue_render
 from ui.ui_utils import navigation_menu
 
 
@@ -36,7 +36,7 @@ def run_paint(painter: ReplicateImagePaintingTool, render_queue: Queue, prompt: 
         painter.invoke(prompt)
     except Exception as e:
         view_data = {"subheader": ("Error:",), "code": (str(e),)}
-        render_queue.put(StreamLiteItemView(view_data))
+        render_queue.put(StreamLitItemView(view_data))
     finally:
         render_queue.put(None)
 
