@@ -48,7 +48,7 @@ def main():
     generator_key = PostTextGeneratorTool.ui_state_name
     stop_other_generators(generator_key)
     
-    st.header("Generate post (MotleyCrew)")
+    st.header("Generate post")
     generator = st.session_state.get(generator_key)
 
     # prompt_label = "Prompt"
