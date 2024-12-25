@@ -62,12 +62,19 @@ class PostTextGeneratorTool(MotleyTool, ViewDecoratorPostTextGenerationMixin):
     
     def __init__(
         self,
-        max_remarks_iterations: str
+        max_remarks_iterations: int,
+        history_storage = None,
+        render_queue: Queue = Queue(),
     ):
-        self._render_queue = Queue()
-        self.viewer = StreamLitItemQueueViewer(self._render_queue, self)
+        self._render_queue = render_queue
+        self.viewer = None
+        if history_storage is not None:
+            self.viewer = StreamLitItemQueueViewer(self._render_queue, storage=history_storage)
+        else:    
+            self.viewer = StreamLitItemQueueViewer(self._render_queue, self)
         self._history = []
         self.my_stop_event = Event()
+        self.remarks_completed_event = Event()  # Новое событие для завершения ремарок
         self.remarks_iterations: int = 0
         self.max_remarks_iterations = max_remarks_iterations
 

@@ -116,7 +116,7 @@ class ViewDecoratorPostTextGenerationMixin(ViewDecoratorRemarksMixin):
             return results
 
         if self.remarks_iterations == self.max_remarks_iterations:
-            self.stop()
+            self.remarks_completed_event.set()  # Устанавливаем флаг завершения ремарок
             return results
 
         form_view_items = {
